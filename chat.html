@@ -5,6 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>チャット | AI経理社員</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 0;
+    }
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background: var(--gray-400);
+      border-radius: 50%;
+      animation: typingDot 1.2s infinite;
+    }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingDot {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1); }
+    }
+  </style>
 </head>
 <body>
   <div class="app-layout">
@@ -37,7 +58,69 @@
   <script>
     initLayout('chat', 'チャット');
 
-    // 初期メッセージ表示
+    // ===== API設定 =====
+    const CLAUDE_API_KEY = 'YOUR_API_KEY_HERE';
+    const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+    const CLAUDE_MODEL = 'claude-opus-4-6';
+    const CLAUDE_MAX_TOKENS = 1024;
+
+    const SYSTEM_PROMPT = `あなたは経理のプロフェッショナルです。日商簿記1級・税理士補助の知識を持ち、中小企業の経理実務を10年以上担当してきたベテラン経理社員として振る舞ってください。
+
+現在はAI経理社員として、ユーザーの経理業務をサポートしています。
+
+【得意分野】
+- 適格請求書（インボイス）の作成・管理
+- 売掛金・買掛金の管理
+- 仕訳・帳簿作成
+- 消費税の計算・税率判定
+- 月次・年次決算のサポート
+- 経費精算・勘定科目の判定
+- 電子帳簿保存法への対応
+
+【回答スタイル】
+- 丁寧かつ的確に、プロとして自信を持って回答する
+- 数字は必ず円単位でカンマ区切りで表示する
+- 複雑な会計処理も分かりやすく説明する
+- 必要に応じて具体的な仕訳例を示す
+- 税務上の注意点があれば必ず添える
+- 不明な点は正直に「顧問税理士への確認をお勧めします」と伝える`;
+
+    // 会話履歴（API用）
+    let conversationHistory = [];
+
+    // ===== キーワード定型文マップ =====
+    const KEYWORD_RESPONSES = [
+      {
+        keywords: ['請求書'],
+        response: '承りました。適格請求書を作成します。\n・発行日：2026年3月31日\n・登録番号：T1234567890123（自動挿入）\n取引先と金額を教えてください。'
+      },
+      {
+        keywords: ['売掛'],
+        response: '売掛残高サマリーです。\n━━━━━━━━━━━━━━━\n売掛残高合計：¥1,485,000\nうち期日超過：¥220,000（合同会社タナカ工務店）\n今月入金予定：¥935,000（株式会社フジタ）\n━━━━━━━━━━━━━━━\n詳細は売掛管理画面でご確認ください。'
+      },
+      {
+        keywords: ['経費'],
+        response: '経費を登録します。\n領収書をお手元にご用意ください。\n領収書アップロード画面から撮影してアップロードすると、AIが自動で内容を認識・仕訳します。'
+      },
+      {
+        keywords: ['サマリー', 'まとめ'],
+        response: '今月の経営サマリーです。\n━━━━━━━━━━━━━━━\n売上合計：¥2,090,000\n入金確認済み：¥605,000\n未回収：¥1,485,000\n経費合計：¥148,000\n営業利益（概算）：¥1,942,000\n━━━━━━━━━━━━━━━'
+      },
+      {
+        keywords: ['銀行', '入金', '消込'],
+        response: '銀行明細の取込・消込状況です。\n━━━━━━━━━━━━━━━\n普通預金残高：¥2,450,000\n先月消込完了：8件（¥3,245,000）\n未マッチ：1件（要確認）\n期日超過：2件\n━━━━━━━━━━━━━━━\n銀行明細取込画面からCSVをインポートしてください。'
+      },
+      {
+        keywords: ['仕訳'],
+        response: '直近の仕訳データです。\n━━━━━━━━━━━━━━━\n3/31 売掛金 ¥935,000 / 売上高 ¥850,000・仮受消費税 ¥85,000\n3/28 売掛金 ¥220,000 / 売上高 ¥200,000・仮受消費税 ¥20,000\n3/24 旅費交通費 ¥11,880 / 未払金 ¥11,880（新幹線）\n3/20 外注費 ¥80,000 / 未払金 ¥80,000（デザイン外注）\n━━━━━━━━━━━━━━━'
+      },
+      {
+        keywords: ['リマインド'],
+        response: 'リマインドメールを送付しました。\n・送付先：期日超過の取引先\n・送付日時：本日\n・件名：【お支払いのお願い】請求書の件について'
+      },
+    ];
+
+    // ===== 初期メッセージ表示 =====
     function renderMessages() {
       const container = document.getElementById('chatMessages');
       let html = '';
@@ -62,29 +145,127 @@
 
     renderMessages();
 
-    // メッセージ送信
+    // ===== キーワード判定 =====
+    function getKeywordResponse(text) {
+      for (const entry of KEYWORD_RESPONSES) {
+        for (const keyword of entry.keywords) {
+          if (text.includes(keyword)) {
+            return entry.response;
+          }
+        }
+      }
+      return null;
+    }
+
+    // ===== メッセージ送信 =====
     function sendMessage() {
       const input = document.getElementById('chatInput');
       const text = input.value.trim();
       if (!text) return;
 
-      // ユーザーメッセージ追加
       addBubble('user', 'あなた', text);
       input.value = '';
 
-      // AI応答（モック）
-      setTimeout(() => {
-        addBubble('ai', 'AI経理社員', getAIResponse(text));
-      }, 800);
+      // キーワード判定
+      const keywordReply = getKeywordResponse(text);
+      if (keywordReply) {
+        // 定型文：即座に表示
+        addBubble('ai', 'AI経理社員', keywordReply);
+      } else {
+        // Claude API呼び出し
+        callClaudeAPI(text);
+      }
     }
 
     function sendQuickAction(action) {
       addBubble('user', 'あなた', action);
-      setTimeout(() => {
-        addBubble('ai', 'AI経理社員', getAIResponse(action));
-      }, 800);
+
+      const keywordReply = getKeywordResponse(action);
+      if (keywordReply) {
+        addBubble('ai', 'AI経理社員', keywordReply);
+      } else {
+        callClaudeAPI(action);
+      }
     }
 
+    // ===== Claude API呼び出し =====
+    async function callClaudeAPI(userMessage) {
+      // APIキー未設定チェック
+      if (CLAUDE_API_KEY === 'YOUR_API_KEY_HERE') {
+        addBubble('ai', 'AI経理社員', 'APIキーを設定してください。chat.htmlのYOUR_API_KEY_HEREを書き換えてください。');
+        return;
+      }
+
+      // ローディング表示
+      const loadingId = showLoading();
+
+      // 会話履歴に追加
+      conversationHistory.push({ role: 'user', content: userMessage });
+
+      try {
+        const response = await fetch(CLAUDE_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': CLAUDE_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: CLAUDE_MAX_TOKENS,
+            system: SYSTEM_PROMPT,
+            messages: conversationHistory
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const aiMessage = data.content[0].text;
+
+        // 会話履歴に追加
+        conversationHistory.push({ role: 'assistant', content: aiMessage });
+
+        // ローディング削除 → 応答表示
+        removeLoading(loadingId);
+        addBubble('ai', 'AI経理社員', aiMessage);
+
+      } catch (error) {
+        removeLoading(loadingId);
+        addBubble('ai', 'AI経理社員', '申し訳ありません。通信エラーが発生しました。\nしばらく経ってからもう一度お試しください。');
+        console.error('Claude API Error:', error);
+      }
+    }
+
+    // ===== ローディング表示 =====
+    function showLoading() {
+      const container = document.getElementById('chatMessages');
+      const id = 'loading-' + Date.now();
+      const div = document.createElement('div');
+      div.className = 'chat-bubble ai';
+      div.id = id;
+      div.innerHTML = `
+        <span class="bubble-name">AI経理社員</span>
+        <div class="bubble-content">
+          AI経理社員が入力中...
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    function removeLoading(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    // ===== 吹き出し追加 =====
     function addBubble(type, name, content) {
       const container = document.getElementById('chatMessages');
       const div = document.createElement('div');
@@ -95,19 +276,6 @@
         <div class="bubble-content">${content.replace(/\n/g, '<br>')}</div>`;
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
-    }
-
-    function getAIResponse(text) {
-      if (text.includes('請求書')) {
-        return '請求書作成画面をご用意しました。\n<a href="invoice-new.html">こちら</a>から新規請求書を作成できます。\n取引先と品目を入力するだけで、適格請求書を自動生成します。';
-      } else if (text.includes('売掛') || text.includes('残高')) {
-        return '現在の売掛残高は以下の通りです。\n\n・売掛残高合計：¥1,485,000\n・入金待ち：3件\n・期日超過：1件（合同会社タナカ工務店）\n\n<a href="receivable.html">売掛管理画面</a>で詳細を確認できます。';
-      } else if (text.includes('経費')) {
-        return '経費登録ですね。\n<a href="receipt-upload.html">領収書アップロード画面</a>からスマートフォンで撮影するだけで、AIが自動で読み取り・仕訳します。';
-      } else if (text.includes('月次') || text.includes('サマリー')) {
-        return '2026年3月の月次サマリーです。\n\n📊 売上高：¥1,850,000\n📉 経費合計：¥231,160\n💰 営業利益：¥1,508,840\n\n<a href="profit-loss.html">損益計算書</a>で詳細を確認できます。';
-      }
-      return '承知しました。ご質問の内容を確認しています。\n他にお手伝いできることがあれば、お気軽にお申し付けください。';
     }
   </script>
 </body>
