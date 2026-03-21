@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>残高試算表 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">残高試算表</h2>
+          <div class="btn-group">
+            <button class="btn btn-outline" onclick="showToast('PDFをダウンロードしました')">📄 PDF出力</button>
+            <button class="btn btn-outline" onclick="showToast('CSVをダウンロードしました')">📥 CSV出力</button>
+          </div>
+        </div>
+
+        <p class="page-subtitle" style="margin-top:0;">対象期間：2025年4月1日〜2026年3月31日</p>
+
+        <div class="card">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>勘定科目</th>
+                  <th class="text-right">借方残高</th>
+                  <th class="text-right">貸方残高</th>
+                </tr>
+              </thead>
+              <tbody id="tbBody"></tbody>
+              <tfoot id="tbFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- バランスチェック -->
+        <div class="alert alert-success mt-16" id="balanceCheck" style="display:none;">
+          ✓ 借方合計と貸方合計が一致しています。
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('trial-balance', '残高試算表');
+
+    const tbody = document.getElementById('tbBody');
+    let totalDebit = 0, totalCredit = 0;
+
+    TRIAL_BALANCE.forEach(item => {
+      totalDebit += item.debit;
+      totalCredit += item.credit;
+      tbody.innerHTML += `
+        <tr>
+          <td>${item.account}</td>
+          <td class="text-right amount">${item.debit ? formatCurrency(item.debit) : '—'}</td>
+          <td class="text-right amount">${item.credit ? formatCurrency(item.credit) : '—'}</td>
+        </tr>`;
+    });
+
+    document.getElementById('tbFoot').innerHTML = `
+      <tr>
+        <td><strong>合計</strong></td>
+        <td class="text-right"><strong>${formatCurrency(totalDebit)}</strong></td>
+        <td class="text-right"><strong>${formatCurrency(totalCredit)}</strong></td>
+      </tr>`;
+
+    // バランスチェック
+    if (totalDebit === totalCredit) {
+      document.getElementById('balanceCheck').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

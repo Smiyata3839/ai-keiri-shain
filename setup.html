@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自社情報設定 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <h2 class="page-title">自社情報設定</h2>
+        <div class="card">
+          <div class="card-header">基本情報</div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">会社名</label>
+              <input type="text" class="form-control" value="株式会社クリエイトデザイン">
+            </div>
+            <div class="form-group">
+              <label class="form-label">適格請求書発行事業者登録番号</label>
+              <input type="text" class="form-control" value="T1234567890123">
+            </div>
+            <div class="form-group">
+              <label class="form-label">代表者名</label>
+              <input type="text" class="form-control" value="田中 太郎">
+            </div>
+            <div class="form-group">
+              <label class="form-label">住所</label>
+              <input type="text" class="form-control" value="東京都渋谷区神宮前1-2-3 クリエイトビル5F">
+            </div>
+            <div class="form-group">
+              <label class="form-label">電話番号</label>
+              <input type="text" class="form-control" value="03-1234-5678">
+            </div>
+            <div class="form-group">
+              <label class="form-label">振込先口座</label>
+              <input type="text" class="form-control" value="みずほ銀行 渋谷支店 普通 1234567">
+            </div>
+            <div class="form-group">
+              <label class="form-label">事業年度</label>
+              <input type="text" class="form-control" value="2026年4月1日〜2027年3月31日">
+            </div>
+            <div class="btn-group mt-16">
+              <button class="btn btn-primary" onclick="showToast('設定を保存しました')">保存する</button>
+              <button class="btn btn-outline">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>initLayout('setup', '自社情報設定');</script>
+</body>
+</html>

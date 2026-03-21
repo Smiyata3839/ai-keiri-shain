@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>損益計算書 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .pl-row { display: flex; justify-content: space-between; padding: 10px 20px; font-size: 0.95rem; border-bottom: 1px solid var(--gray-100); }
+    .pl-row.indent { padding-left: 40px; font-size: 0.9rem; color: var(--gray-600); }
+    .pl-row.subtotal { font-weight: 700; border-top: 2px solid var(--gray-200); background: var(--gray-50); }
+    .pl-row.total { font-weight: 700; font-size: 1.15rem; border-top: 2px solid var(--navy); background: var(--blue-light); color: var(--navy); }
+    .pl-row .label { flex: 1; }
+    .pl-row .value { text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">損益計算書（P/L）</h2>
+          <button class="btn btn-outline" onclick="showToast('PDFをダウンロードしました')">📄 PDF出力</button>
+        </div>
+
+        <!-- タブ -->
+        <div class="tabs">
+          <button class="tab active" onclick="showPL('monthly', this)">当月（3月）</button>
+          <button class="tab" onclick="showPL('cumulative', this)">累計</button>
+        </div>
+
+        <div class="card" style="max-width:700px;">
+          <div id="plContent"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('profit-loss', '損益計算書');
+
+    function showPL(period, btn) {
+      // タブ切替
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const data = PROFIT_LOSS[period];
+      const container = document.getElementById('plContent');
+
+      let html = `
+        <div class="pl-row"><span class="label">売上高</span><span class="value amount">${formatCurrency(data.revenue)}</span></div>
+        <div class="pl-row"><span class="label">売上原価</span><span class="value amount">${formatCurrency(data.cost_of_sales)}</span></div>
+        <div class="pl-row subtotal"><span class="label">売上総利益</span><span class="value amount">${formatCurrency(data.gross_profit)}</span></div>
+        <div class="pl-row"><span class="label" style="font-weight:600;">販売費及び一般管理費</span><span class="value amount">${formatCurrency(data.sga.total)}</span></div>`;
+
+      data.sga.items.forEach(item => {
+        html += `<div class="pl-row indent"><span class="label">${item.name}</span><span class="value amount">${formatCurrency(item.amount)}</span></div>`;
+      });
+
+      html += `<div class="pl-row total"><span class="label">営業利益</span><span class="value amount">${formatCurrency(data.operating_income)}</span></div>`;
+
+      container.innerHTML = html;
+    }
+
+    showPL('monthly', null);
+  </script>
+</body>
+</html>

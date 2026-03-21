@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>貸借対照表 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .bs-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .bs-section-title {
+      font-size: 1.1rem; font-weight: 700; color: var(--navy);
+      padding: 12px 16px; background: var(--gray-50);
+      border-bottom: 2px solid var(--navy);
+    }
+    .bs-category {
+      font-weight: 600; color: var(--gray-600); padding: 10px 16px;
+      background: var(--gray-50); font-size: 0.85rem;
+    }
+    .bs-item { display: flex; justify-content: space-between; padding: 8px 16px 8px 32px; border-bottom: 1px solid var(--gray-100); font-size: 0.9rem; }
+    .bs-total { display: flex; justify-content: space-between; padding: 12px 16px; font-weight: 700; border-top: 2px solid var(--navy); background: var(--blue-light); font-size: 1rem; }
+    .bs-subtotal { display: flex; justify-content: space-between; padding: 8px 16px; font-weight: 600; border-top: 1px solid var(--gray-200); font-size: 0.9rem; }
+    @media (max-width: 768px) { .bs-layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">貸借対照表（B/S）</h2>
+          <button class="btn btn-outline" onclick="showToast('PDFをダウンロードしました')">📄 PDF出力</button>
+        </div>
+        <p class="page-subtitle" style="margin-top:0;">2026年3月31日現在</p>
+
+        <div class="bs-layout">
+          <!-- 資産の部 -->
+          <div class="card">
+            <div class="bs-section-title">資産の部</div>
+            <div class="bs-category">流動資産</div>
+            <div id="currentAssets"></div>
+            <div class="bs-subtotal" id="currentAssetsTotal"></div>
+            <div class="bs-category">固定資産</div>
+            <div class="bs-item" style="color:var(--gray-400);">
+              <span>（該当なし）</span><span>—</span>
+            </div>
+            <div class="bs-total" id="assetsTotal"></div>
+          </div>
+
+          <!-- 負債・純資産の部 -->
+          <div class="card">
+            <div class="bs-section-title">負債の部</div>
+            <div class="bs-category">流動負債</div>
+            <div id="currentLiabilities"></div>
+            <div class="bs-subtotal" id="liabilitiesTotal"></div>
+
+            <div class="bs-section-title" style="margin-top:0;">純資産の部</div>
+            <div id="equityItems"></div>
+            <div class="bs-subtotal" id="equityTotal"></div>
+
+            <div class="bs-total" id="liabEquityTotal"></div>
+          </div>
+        </div>
+
+        <div class="alert alert-success mt-16" id="bsCheck" style="display:none;">
+          ✓ 資産合計と負債・純資産合計が一致しています。
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('balance-sheet', '貸借対照表');
+
+    const bs = BALANCE_SHEET;
+
+    // 資産
+    const ca = document.getElementById('currentAssets');
+    let caTotal = 0;
+    bs.assets.current.forEach(a => {
+      caTotal += a.amount;
+      ca.innerHTML += `<div class="bs-item"><span>${a.name}</span><span class="amount">${formatCurrency(a.amount)}</span></div>`;
+    });
+    document.getElementById('currentAssetsTotal').innerHTML = `<span>流動資産合計</span><span class="amount">${formatCurrency(caTotal)}</span>`;
+    document.getElementById('assetsTotal').innerHTML = `<span>資産合計</span><span class="amount">${formatCurrency(bs.assets.total)}</span>`;
+
+    // 負債
+    const cl = document.getElementById('currentLiabilities');
+    let clTotal = 0;
+    bs.liabilities.current.forEach(l => {
+      clTotal += l.amount;
+      cl.innerHTML += `<div class="bs-item"><span>${l.name}</span><span class="amount">${formatCurrency(l.amount)}</span></div>`;
+    });
+    document.getElementById('liabilitiesTotal').innerHTML = `<span>負債合計</span><span class="amount">${formatCurrency(bs.liabilities.total)}</span>`;
+
+    // 純資産
+    const eq = document.getElementById('equityItems');
+    bs.equity.items.forEach(e => {
+      eq.innerHTML += `<div class="bs-item"><span>${e.name}</span><span class="amount">${formatCurrency(e.amount)}</span></div>`;
+    });
+    document.getElementById('equityTotal').innerHTML = `<span>純資産合計</span><span class="amount">${formatCurrency(bs.equity.total)}</span>`;
+
+    const liabEquity = bs.liabilities.total + bs.equity.total;
+    document.getElementById('liabEquityTotal').innerHTML = `<span>負債・純資産合計</span><span class="amount">${formatCurrency(liabEquity)}</span>`;
+
+    if (bs.assets.total === liabEquity) {
+      document.getElementById('bsCheck').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

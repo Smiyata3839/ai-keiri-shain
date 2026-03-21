@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>総勘定元帳 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .ledger-layout { display: flex; gap: 24px; }
+    .account-list {
+      width: 200px;
+      flex-shrink: 0;
+    }
+    .account-list-item {
+      padding: 10px 16px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .account-list-item:hover { background: var(--gray-100); }
+    .account-list-item.active {
+      background: var(--blue);
+      color: var(--white);
+    }
+    .ledger-detail { flex: 1; min-width: 0; }
+    @media (max-width: 768px) {
+      .ledger-layout { flex-direction: column; }
+      .account-list { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; }
+      .account-list-item { padding: 6px 12px; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <h2 class="page-title">総勘定元帳</h2>
+
+        <div class="ledger-layout">
+          <!-- 勘定科目リスト -->
+          <div class="card account-list" id="accountList"></div>
+
+          <!-- 元帳テーブル -->
+          <div class="card ledger-detail">
+            <div class="card-header" id="ledgerTitle">売上高</div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日付</th>
+                    <th>摘要</th>
+                    <th class="text-right">借方</th>
+                    <th class="text-right">貸方</th>
+                    <th class="text-right">残高</th>
+                  </tr>
+                </thead>
+                <tbody id="ledgerBody"></tbody>
+                <tfoot id="ledgerFoot"></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('ledger', '総勘定元帳');
+
+    const accountNames = Object.keys(LEDGER_DATA);
+    const accountList = document.getElementById('accountList');
+
+    accountNames.forEach((name, i) => {
+      const div = document.createElement('div');
+      div.className = 'account-list-item' + (i === 0 ? ' active' : '');
+      div.textContent = name;
+      div.onclick = () => selectAccount(name, div);
+      accountList.appendChild(div);
+    });
+
+    function selectAccount(name, el) {
+      document.querySelectorAll('.account-list-item').forEach(e => e.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('ledgerTitle').textContent = name;
+
+      const entries = LEDGER_DATA[name] || [];
+      const tbody = document.getElementById('ledgerBody');
+      const tfoot = document.getElementById('ledgerFoot');
+
+      let totalDebit = 0, totalCredit = 0;
+      tbody.innerHTML = entries.map(e => {
+        totalDebit += e.debit;
+        totalCredit += e.credit;
+        return `
+          <tr>
+            <td>${formatDate(e.date)}</td>
+            <td>${e.description}</td>
+            <td class="text-right amount">${e.debit ? formatCurrency(e.debit) : ''}</td>
+            <td class="text-right amount">${e.credit ? formatCurrency(e.credit) : ''}</td>
+            <td class="text-right amount">${formatCurrency(e.balance)}</td>
+          </tr>`;
+      }).join('');
+
+      const endBalance = entries.length > 0 ? entries[entries.length - 1].balance : 0;
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="2"><strong>当期合計</strong></td>
+          <td class="text-right">${totalDebit ? formatCurrency(totalDebit) : ''}</td>
+          <td class="text-right">${totalCredit ? formatCurrency(totalCredit) : ''}</td>
+          <td class="text-right"><strong>${formatCurrency(endBalance)}</strong></td>
+        </tr>`;
+    }
+
+    // 初期表示
+    selectAccount(accountNames[0], accountList.children[0]);
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-container">
+      <div class="login-logo">
+        <div class="logo-icon">🤖</div>
+        AI経理社員
+      </div>
+      <p class="login-catchphrase">経理業務をAIがまるごとサポート。<br>請求書発行・仕訳・消込をチャットで完結。</p>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="email">メールアドレス</label>
+          <input type="email" id="email" class="form-control" placeholder="example@company.co.jp" value="tanaka@create-design.co.jp">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">パスワード</label>
+          <input type="password" id="password" class="form-control" placeholder="パスワードを入力" value="••••••••">
+        </div>
+        <div class="form-group" style="text-align:left;">
+          <label style="font-size:0.85rem;color:var(--gray-600);cursor:pointer;">
+            <input type="checkbox" checked style="margin-right:6px;">ログイン状態を保持する
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg">ログイン</button>
+      </form>
+      <div class="login-footer">
+        <a href="#">パスワードをお忘れの方</a> ｜ <a href="#">新規登録</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      window.location.href = 'chat.html';
+    }
+  </script>
+</body>
+</html>

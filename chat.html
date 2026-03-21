@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>チャット | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="chat-layout">
+        <!-- チャットメッセージエリア -->
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <!-- クイックアクション -->
+        <div class="chat-quick-actions">
+          <button class="quick-action-btn" onclick="sendQuickAction('請求書を作成')">📝 請求書を作成</button>
+          <button class="quick-action-btn" onclick="sendQuickAction('売掛残高を確認')">💰 売掛残高を確認</button>
+          <button class="quick-action-btn" onclick="sendQuickAction('経費を登録')">🧾 経費を登録</button>
+          <button class="quick-action-btn" onclick="sendQuickAction('月次サマリー')">📊 月次サマリー</button>
+        </div>
+
+        <!-- 入力エリア -->
+        <div class="chat-input-area">
+          <input type="text" id="chatInput" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')sendMessage()">
+          <button class="chat-send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('chat', 'チャット');
+
+    // 初期メッセージ表示
+    function renderMessages() {
+      const container = document.getElementById('chatMessages');
+      let html = '';
+      CHAT_MESSAGES.forEach(msg => {
+        if (msg.type === 'system') {
+          html += `
+            <div class="chat-bubble system" style="align-self:flex-start;align-items:flex-start;">
+              <span class="bubble-name">${msg.name}</span>
+              <div class="bubble-content">${msg.content.replace(/\n/g, '<br>')}</div>
+            </div>`;
+        } else {
+          html += `
+            <div class="chat-bubble ${msg.type}">
+              <span class="bubble-name">${msg.name}</span>
+              <div class="bubble-content">${msg.content.replace(/\n/g, '<br>')}</div>
+            </div>`;
+        }
+      });
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    renderMessages();
+
+    // メッセージ送信
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      // ユーザーメッセージ追加
+      addBubble('user', 'あなた', text);
+      input.value = '';
+
+      // AI応答（モック）
+      setTimeout(() => {
+        addBubble('ai', 'AI経理社員', getAIResponse(text));
+      }, 800);
+    }
+
+    function sendQuickAction(action) {
+      addBubble('user', 'あなた', action);
+      setTimeout(() => {
+        addBubble('ai', 'AI経理社員', getAIResponse(action));
+      }, 800);
+    }
+
+    function addBubble(type, name, content) {
+      const container = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = `chat-bubble ${type}`;
+      if (type === 'system') div.style.cssText = 'align-self:flex-start;align-items:flex-start;';
+      div.innerHTML = `
+        <span class="bubble-name">${name}</span>
+        <div class="bubble-content">${content.replace(/\n/g, '<br>')}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function getAIResponse(text) {
+      if (text.includes('請求書')) {
+        return '請求書作成画面をご用意しました。\n<a href="invoice-new.html">こちら</a>から新規請求書を作成できます。\n取引先と品目を入力するだけで、適格請求書を自動生成します。';
+      } else if (text.includes('売掛') || text.includes('残高')) {
+        return '現在の売掛残高は以下の通りです。\n\n・売掛残高合計：¥1,485,000\n・入金待ち：3件\n・期日超過：1件（合同会社タナカ工務店）\n\n<a href="receivable.html">売掛管理画面</a>で詳細を確認できます。';
+      } else if (text.includes('経費')) {
+        return '経費登録ですね。\n<a href="receipt-upload.html">領収書アップロード画面</a>からスマートフォンで撮影するだけで、AIが自動で読み取り・仕訳します。';
+      } else if (text.includes('月次') || text.includes('サマリー')) {
+        return '2026年3月の月次サマリーです。\n\n📊 売上高：¥1,850,000\n📉 経費合計：¥231,160\n💰 営業利益：¥1,508,840\n\n<a href="profit-loss.html">損益計算書</a>で詳細を確認できます。';
+      }
+      return '承知しました。ご質問の内容を確認しています。\n他にお手伝いできることがあれば、お気軽にお申し付けください。';
+    }
+  </script>
+</body>
+</html>

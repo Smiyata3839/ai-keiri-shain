@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>売掛管理 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <h2 class="page-title">売掛管理・回収状況</h2>
+
+        <!-- サマリーカード -->
+        <div class="summary-cards">
+          <div class="summary-card accent-blue">
+            <div class="label">売掛残高合計</div>
+            <div class="value" id="totalBalance"></div>
+          </div>
+          <div class="summary-card accent-green">
+            <div class="label">今月入金予定</div>
+            <div class="value" id="monthlyExpected"></div>
+            <div class="sub">3件</div>
+          </div>
+          <div class="summary-card accent-red">
+            <div class="label">期日超過</div>
+            <div class="value" id="overdueCount"></div>
+            <div class="sub">要対応</div>
+          </div>
+        </div>
+
+        <!-- 一覧テーブル -->
+        <div class="card">
+          <div class="card-header">取引先別 売掛一覧</div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>取引先名</th>
+                  <th class="text-right">請求額</th>
+                  <th class="text-right">入金済み</th>
+                  <th class="text-right">残高</th>
+                  <th>最終請求日</th>
+                  <th>ステータス</th>
+                </tr>
+              </thead>
+              <tbody id="receivableBody"></tbody>
+              <tfoot>
+                <tr>
+                  <td><strong>合計</strong></td>
+                  <td class="text-right" id="totalInvoiced"></td>
+                  <td class="text-right" id="totalPaid"></td>
+                  <td class="text-right" id="totalBal"></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('receivable', '売掛管理');
+
+    // サマリー計算
+    const totalBalance = RECEIVABLES.reduce((s, r) => s + r.balance, 0);
+    const overdueItems = RECEIVABLES.filter(r => r.status === 'overdue');
+    const pendingItems = RECEIVABLES.filter(r => r.status === 'pending');
+
+    document.getElementById('totalBalance').textContent = formatCurrency(totalBalance);
+    document.getElementById('monthlyExpected').textContent = formatCurrency(pendingItems.reduce((s, r) => s + r.balance, 0));
+    document.getElementById('overdueCount').textContent = overdueItems.length + '件';
+
+    // テーブル
+    const tbody = document.getElementById('receivableBody');
+    let sumInvoiced = 0, sumPaid = 0, sumBal = 0;
+    RECEIVABLES.forEach(r => {
+      sumInvoiced += r.invoiced;
+      sumPaid += r.paid;
+      sumBal += r.balance;
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${r.customer}</strong></td>
+          <td class="text-right amount">${formatCurrency(r.invoiced)}</td>
+          <td class="text-right amount">${formatCurrency(r.paid)}</td>
+          <td class="text-right amount">${formatCurrency(r.balance)}</td>
+          <td>${formatDate(r.last_invoice)}</td>
+          <td>${getStatusBadge(r.status)}</td>
+        </tr>`;
+    });
+    document.getElementById('totalInvoiced').innerHTML = `<strong>${formatCurrency(sumInvoiced)}</strong>`;
+    document.getElementById('totalPaid').innerHTML = `<strong>${formatCurrency(sumPaid)}</strong>`;
+    document.getElementById('totalBal').innerHTML = `<strong>${formatCurrency(sumBal)}</strong>`;
+  </script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>請求書発行 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <h2 class="page-title">適格請求書 新規作成</h2>
+        <div class="card">
+          <div class="card-body">
+            <!-- 基本情報 -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="invoice-form-grid">
+              <div class="form-group">
+                <label class="form-label">取引先</label>
+                <select class="form-control" id="customerSelect" onchange="updateInvoice()">
+                  <option value="">選択してください</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">請求書番号</label>
+                <input type="text" class="form-control" value="2026-032" readonly style="background:var(--gray-50);">
+              </div>
+              <div class="form-group">
+                <label class="form-label">発行日</label>
+                <input type="date" class="form-control" id="issueDate" value="2026-03-31">
+              </div>
+              <div class="form-group">
+                <label class="form-label">支払期日</label>
+                <input type="date" class="form-control" id="dueDate" value="2026-04-30">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:8px;">
+              <label class="form-label">登録番号</label>
+              <input type="text" class="form-control" value="T1234567890123" readonly style="background:var(--gray-50);">
+            </div>
+
+            <!-- 品目テーブル -->
+            <h3 style="font-size:1rem;font-weight:700;margin:24px 0 12px;">品目明細</h3>
+            <div class="table-container">
+              <table id="itemsTable">
+                <thead>
+                  <tr>
+                    <th>品目</th>
+                    <th style="width:80px;">数量</th>
+                    <th style="width:130px;">単価</th>
+                    <th style="width:100px;">税率</th>
+                    <th style="width:130px;">金額</th>
+                    <th style="width:50px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="itemsBody">
+                  <tr>
+                    <td><input type="text" class="form-control" value="Webサイト制作費" onchange="calcTotal()"></td>
+                    <td><input type="number" class="form-control" value="1" min="1" onchange="calcTotal()"></td>
+                    <td><input type="number" class="form-control" value="850000" onchange="calcTotal()"></td>
+                    <td>
+                      <select class="form-control" onchange="calcTotal()">
+                        <option value="10" selected>10%</option>
+                        <option value="8">8%</option>
+                      </select>
+                    </td>
+                    <td class="text-right amount" id="rowAmount0">¥850,000</td>
+                    <td><button class="btn btn-sm btn-outline" onclick="removeRow(this)" style="color:var(--red);">✕</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn btn-outline btn-sm mt-16" onclick="addRow()">＋ 行を追加</button>
+
+            <!-- 合計 -->
+            <div style="margin-top:24px;text-align:right;border-top:1px solid var(--gray-200);padding-top:16px;">
+              <div style="display:flex;justify-content:flex-end;gap:32px;margin-bottom:8px;">
+                <span>小計</span>
+                <span class="amount" id="subtotal">¥850,000</span>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:32px;margin-bottom:8px;">
+                <span>消費税</span>
+                <span class="amount" id="taxTotal">¥85,000</span>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:32px;font-size:1.3rem;font-weight:700;border-top:2px solid var(--navy);padding-top:12px;margin-top:8px;">
+                <span>合計金額</span>
+                <span class="amount" id="grandTotal">¥935,000</span>
+              </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="btn-group mt-24">
+              <a href="invoice-preview.html" class="btn btn-outline">プレビュー</a>
+              <button class="btn btn-primary" onclick="showToast('適格請求書を発行・保存しました')">発行する</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('invoice-new', '請求書発行');
+
+    // 取引先ドロップダウン
+    const sel = document.getElementById('customerSelect');
+    CUSTOMERS.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+    sel.value = '1';
+
+    let rowCount = 1;
+
+    function addRow() {
+      const tbody = document.getElementById('itemsBody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="text" class="form-control" placeholder="品目名" onchange="calcTotal()"></td>
+        <td><input type="number" class="form-control" value="1" min="1" onchange="calcTotal()"></td>
+        <td><input type="number" class="form-control" value="0" onchange="calcTotal()"></td>
+        <td>
+          <select class="form-control" onchange="calcTotal()">
+            <option value="10" selected>10%</option>
+            <option value="8">8%</option>
+          </select>
+        </td>
+        <td class="text-right amount" id="rowAmount${rowCount}">¥0</td>
+        <td><button class="btn btn-sm btn-outline" onclick="removeRow(this)" style="color:var(--red);">✕</button></td>`;
+      tbody.appendChild(tr);
+      rowCount++;
+    }
+
+    function removeRow(btn) {
+      const tbody = document.getElementById('itemsBody');
+      if (tbody.rows.length > 1) {
+        btn.closest('tr').remove();
+        calcTotal();
+      }
+    }
+
+    function calcTotal() {
+      const rows = document.getElementById('itemsBody').rows;
+      let subtotal = 0;
+      let tax = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const inputs = rows[i].querySelectorAll('input');
+        const qty = parseInt(inputs[1].value) || 0;
+        const price = parseInt(inputs[2].value) || 0;
+        const rate = parseInt(rows[i].querySelector('select').value) / 100;
+        const amount = qty * price;
+        subtotal += amount;
+        tax += Math.floor(amount * rate);
+        const amountCell = rows[i].querySelector('td.amount');
+        if (amountCell) amountCell.textContent = formatCurrency(amount);
+      }
+      document.getElementById('subtotal').textContent = formatCurrency(subtotal);
+      document.getElementById('taxTotal').textContent = formatCurrency(tax);
+      document.getElementById('grandTotal').textContent = formatCurrency(subtotal + tax);
+    }
+  </script>
+  <style>
+    @media (max-width: 768px) {
+      .invoice-form-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</body>
+</html>

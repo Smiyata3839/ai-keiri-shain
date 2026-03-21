@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仕訳一覧 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">仕訳一覧</h2>
+          <div class="btn-group">
+            <button class="btn btn-outline" onclick="showToast('CSVをダウンロードしました')">📥 CSV出力</button>
+          </div>
+        </div>
+
+        <!-- 検索 -->
+        <div class="search-box mb-16" style="max-width:320px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="form-control" placeholder="摘要で検索..." style="padding-left:36px;" oninput="filterTable('journalTable', this.value, 5)">
+        </div>
+
+        <!-- テーブル -->
+        <div class="card">
+          <div class="table-container">
+            <table id="journalTable">
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>借方科目</th>
+                  <th class="text-right">借方金額</th>
+                  <th>貸方科目</th>
+                  <th class="text-right">貸方金額</th>
+                  <th>摘要</th>
+                  <th>発生源</th>
+                </tr>
+              </thead>
+              <tbody id="journalBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('journal', '仕訳一覧');
+
+    const tbody = document.getElementById('journalBody');
+    JOURNALS.forEach(j => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${formatDate(j.date)}</td>
+          <td>${j.debit}</td>
+          <td class="text-right amount">${formatCurrency(j.debit_amount)}</td>
+          <td>${j.credit}</td>
+          <td class="text-right amount">${formatCurrency(j.credit_amount)}</td>
+          <td>${j.description}</td>
+          <td>${getSourceIcon(j.source)} ${j.source}</td>
+        </tr>`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>顧客管理 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">顧客管理</h2>
+          <div class="btn-group">
+            <button class="btn btn-outline" onclick="showToast('CSVインポート機能は準備中です')">📥 CSV一括インポート</button>
+            <button class="btn btn-primary" onclick="openModal()">＋ 新規追加</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-container">
+            <table id="customerTable">
+              <thead>
+                <tr>
+                  <th>会社名</th>
+                  <th>担当者</th>
+                  <th>振込人名義（カナ）</th>
+                  <th>メールアドレス</th>
+                  <th>支払サイト</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="customerBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 新規追加モーダル -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span>顧客を追加</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">会社名</label>
+          <input type="text" class="form-control" placeholder="株式会社〇〇">
+        </div>
+        <div class="form-group">
+          <label class="form-label">担当者名</label>
+          <input type="text" class="form-control" placeholder="山田 太郎">
+        </div>
+        <div class="form-group">
+          <label class="form-label">振込人名義（カナ）</label>
+          <input type="text" class="form-control" placeholder="カ）マルマル">
+        </div>
+        <div class="form-group">
+          <label class="form-label">メールアドレス</label>
+          <input type="email" class="form-control" placeholder="info@example.co.jp">
+        </div>
+        <div class="form-group">
+          <label class="form-label">支払サイト</label>
+          <select class="form-control">
+            <option>月末締め翌月末払い</option>
+            <option>月末締め翌々月末払い</option>
+            <option>20日締め翌月末払い</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="closeModal();showToast('顧客を追加しました')">追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('customers', '顧客管理');
+
+    const tbody = document.getElementById('customerBody');
+    CUSTOMERS.forEach(c => {
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td>${c.contact}</td>
+          <td>${c.kana}</td>
+          <td>${c.email}</td>
+          <td>${c.payment_terms}</td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline" onclick="showToast('編集画面を開きます')">編集</button>
+              <button class="btn btn-sm btn-outline" style="color:var(--red);" onclick="showToast('削除しました')">削除</button>
+            </div>
+          </td>
+        </tr>`;
+    });
+
+    function openModal() {
+      document.getElementById('addModal').classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('addModal').classList.remove('active');
+    }
+  </script>
+</body>
+</html>

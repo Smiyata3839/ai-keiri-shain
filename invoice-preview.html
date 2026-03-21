@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>請求書プレビュー | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">請求書プレビュー</h2>
+          <div class="btn-group">
+            <button class="btn btn-outline" onclick="window.print()">🖨 印刷 / PDF</button>
+            <button class="btn btn-primary" onclick="showToast('請求書を発行しました')">発行する</button>
+          </div>
+        </div>
+
+        <!-- 請求書本体 -->
+        <div class="invoice-preview">
+          <!-- ラベル・バッジ -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+            <span class="invoice-badge">✓ 適格請求書</span>
+            <span style="font-size:0.85rem;color:var(--gray-600);">請求書番号：2026-031</span>
+          </div>
+
+          <!-- 宛先・自社情報 -->
+          <div class="invoice-header-section">
+            <div>
+              <div class="invoice-to">株式会社フジタ 御中</div>
+              <p style="font-size:0.85rem;color:var(--gray-600);">下記の通りご請求申し上げます。</p>
+            </div>
+            <div class="invoice-meta">
+              <p class="company-name">株式会社クリエイトデザイン</p>
+              <p>〒150-0001 東京都渋谷区神宮前1-2-3<br>クリエイトビル5F</p>
+              <p>TEL: 03-1234-5678</p>
+              <p style="margin-top:8px;font-weight:600;color:var(--navy);">登録番号：T1234567890123</p>
+            </div>
+          </div>
+
+          <!-- 日付・金額 -->
+          <div style="display:flex;gap:32px;margin-bottom:24px;flex-wrap:wrap;">
+            <div>
+              <span style="font-size:0.8rem;color:var(--gray-600);">発行日</span><br>
+              <strong>2026年3月31日</strong>
+            </div>
+            <div>
+              <span style="font-size:0.8rem;color:var(--gray-600);">お支払期日</span><br>
+              <strong>2026年4月30日</strong>
+            </div>
+            <div>
+              <span style="font-size:0.8rem;color:var(--gray-600);">合計金額（税込）</span><br>
+              <strong style="font-size:1.5rem;color:var(--navy);">¥935,000</strong>
+            </div>
+          </div>
+
+          <!-- 明細テーブル -->
+          <div class="table-container">
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>品目・内容</th>
+                  <th class="text-right">数量</th>
+                  <th class="text-right">単価</th>
+                  <th class="text-center">税率</th>
+                  <th class="text-right">金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Webサイト制作費</td>
+                  <td class="text-right">1</td>
+                  <td class="text-right">¥850,000</td>
+                  <td class="text-center">10%</td>
+                  <td class="text-right">¥850,000</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 合計セクション -->
+          <div class="invoice-total-section">
+            <div class="total-row">
+              <span>小計</span>
+              <span>¥850,000</span>
+            </div>
+            <div class="total-row">
+              <span>10%対象額</span>
+              <span>¥850,000</span>
+            </div>
+            <div class="total-row">
+              <span>消費税額（10%）</span>
+              <span>¥85,000</span>
+            </div>
+            <div class="total-row grand-total">
+              <span>合計金額</span>
+              <span>¥935,000</span>
+            </div>
+          </div>
+
+          <!-- 振込先 -->
+          <div style="margin-top:32px;padding:16px;background:var(--gray-50);border-radius:6px;font-size:0.85rem;">
+            <strong>お振込先</strong><br>
+            みずほ銀行 渋谷支店 普通 1234567<br>
+            口座名義：カ）クリエイトデザイン
+          </div>
+
+          <!-- 備考 -->
+          <div style="margin-top:16px;font-size:0.8rem;color:var(--gray-600);">
+            <strong>備考</strong><br>
+            ・お振込手数料は貴社にてご負担くださいますようお願い申し上げます。<br>
+            ・本請求書は適格請求書等保存方式（インボイス制度）に対応しています。
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>initLayout('invoice-new', '請求書プレビュー');</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自動消込サマリー | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <h2 class="page-title">自動消込サマリー</h2>
+
+        <!-- サマリーボックス -->
+        <div class="card mb-24">
+          <div class="card-header" style="background:var(--green-light);color:var(--green);">
+            ✓ CSVインポート完了（2026年3月分）
+          </div>
+          <div class="card-body">
+            <div class="summary-cards" style="margin-bottom:0;">
+              <div class="summary-card accent-green">
+                <div class="label">消込完了</div>
+                <div class="value">8件</div>
+                <div class="sub">¥3,245,000</div>
+              </div>
+              <div class="summary-card accent-orange">
+                <div class="label">未マッチ</div>
+                <div class="value">1件</div>
+                <div class="sub">要確認</div>
+              </div>
+              <div class="summary-card accent-red">
+                <div class="label">期日超過（未入金）</div>
+                <div class="value">2件</div>
+                <div class="sub">要対応</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 消込完了分 -->
+        <div class="card mb-24">
+          <div class="card-header">消込完了一覧</div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>振込人名義</th>
+                  <th class="text-right">入金額</th>
+                  <th>マッチ請求書</th>
+                  <th>ステータス</th>
+                </tr>
+              </thead>
+              <tbody id="matchedBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 未マッチ分 -->
+        <div class="card mb-24">
+          <div class="card-header" style="color:var(--orange);">⚠ 未マッチ取引</div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>振込人名義</th>
+                  <th class="text-right">入金額</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026年3月31日</td>
+                  <td>カ）フジタ</td>
+                  <td class="text-right amount">¥935,000</td>
+                  <td><button class="btn btn-sm btn-outline" onclick="showToast('手動消込を完了しました')">手動確認</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 期日超過 -->
+        <div class="card">
+          <div class="card-header" style="color:var(--red);">⚠ 期日超過（未入金）</div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>請求書番号</th>
+                  <th>取引先</th>
+                  <th class="text-right">請求額</th>
+                  <th>支払期日</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>2026-030</strong></td>
+                  <td>合同会社タナカ工務店</td>
+                  <td class="text-right amount">¥220,000</td>
+                  <td style="color:var(--red);">2026年3月28日</td>
+                  <td><button class="btn btn-sm btn-danger" onclick="showToast('督促メールを送信しました')">督促送信</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="btn-group mt-24">
+          <a href="journal.html" class="btn btn-primary">仕訳一覧を確認</a>
+          <a href="bank-import.html" class="btn btn-outline">戻る</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('bank-import', '自動消込サマリー');
+
+    // 消込完了テーブル
+    const tbody = document.getElementById('matchedBody');
+    BANK_TRANSACTIONS.filter(t => t.matched && t.amount > 0).forEach(t => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${formatDate(t.date)}</td>
+          <td>${t.description}</td>
+          <td class="text-right amount">${formatCurrency(t.amount)}</td>
+          <td>${t.invoice || '—'}</td>
+          <td>${getStatusBadge('matched')}</td>
+        </tr>`;
+    });
+  </script>
+</body>
+</html>

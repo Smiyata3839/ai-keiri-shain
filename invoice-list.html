@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>請求書一覧 | AI経理社員</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <nav id="sidebar" class="sidebar"></nav>
+    <main class="main-content">
+      <header id="header" class="header"></header>
+      <div class="content">
+        <div class="flex-between mb-24">
+          <h2 class="page-title" style="margin-bottom:0;">請求書一覧</h2>
+          <a href="invoice-new.html" class="btn btn-primary">＋ 新規作成</a>
+        </div>
+
+        <!-- フィルタータブ -->
+        <div class="tabs" id="invoiceTabs">
+          <button class="tab active" data-filter="all" onclick="filterInvoices('all', this)">すべて</button>
+          <button class="tab" data-filter="pending" onclick="filterInvoices('pending', this)">入金待ち</button>
+          <button class="tab" data-filter="overdue" onclick="filterInvoices('overdue', this)">期日超過</button>
+          <button class="tab" data-filter="paid" onclick="filterInvoices('paid', this)">入金済み</button>
+        </div>
+
+        <!-- 検索 -->
+        <div class="search-box mb-16" style="max-width:320px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="form-control" placeholder="取引先名で検索..." style="padding-left:36px;" oninput="searchInvoices(this.value)">
+        </div>
+
+        <!-- テーブル -->
+        <div class="card">
+          <div class="table-container">
+            <table id="invoiceTable">
+              <thead>
+                <tr>
+                  <th>請求書番号</th>
+                  <th>取引先名</th>
+                  <th>発行日</th>
+                  <th class="text-right">金額</th>
+                  <th>ステータス</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="invoiceBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    initLayout('invoice-list', '請求書一覧');
+
+    let currentFilter = 'all';
+    let currentSearch = '';
+
+    function renderInvoices() {
+      const tbody = document.getElementById('invoiceBody');
+      let filtered = INVOICES.filter(inv => {
+        if (currentFilter !== 'all' && inv.status !== currentFilter) return false;
+        if (currentSearch && !inv.customer.toLowerCase().includes(currentSearch.toLowerCase())) return false;
+        return true;
+      });
+
+      tbody.innerHTML = filtered.map(inv => `
+        <tr>
+          <td><strong>${inv.number}</strong></td>
+          <td>${inv.customer}</td>
+          <td>${formatDate(inv.date)}</td>
+          <td class="text-right amount">${formatCurrency(inv.amount)}</td>
+          <td>${getStatusBadge(inv.status)}</td>
+          <td>
+            <a href="invoice-preview.html" class="btn btn-sm btn-outline">表示</a>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterInvoices(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('#invoiceTabs .tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderInvoices();
+    }
+
+    function searchInvoices(query) {
+      currentSearch = query;
+      renderInvoices();
+    }
+
+    renderInvoices();
+  </script>
+</body>
+</html>
