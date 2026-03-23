@@ -41,6 +41,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [inputFocused, setInputFocused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -96,40 +97,60 @@ export default function ChatPage() {
       <Sidebar />
 
       {/* チャットエリア */}
-      <div style={{ marginLeft: "260px", flex: 1, display: "flex", flexDirection: "column", height: "100vh", background: "var(--color-background)" }}>
+      <div style={{
+        marginLeft: "260px", flex: 1, display: "flex", flexDirection: "column",
+        height: "100vh", background: "var(--color-background)",
+      }}>
         {/* ヘッダー */}
         <div style={{
-          padding: "18px 28px", borderBottom: "1px solid var(--color-border)",
-          background: "var(--color-header-bg)", backdropFilter: "blur(20px)",
+          padding: "var(--space-4) var(--space-8)",
+          borderBottom: "1px solid var(--color-border)",
+          background: "var(--color-header-bg)",
+          backdropFilter: "blur(16px)",
           position: "sticky", top: 0, zIndex: 10,
         }}>
-          <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "var(--color-text)" }}>チャット</h2>
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>AI経理社員</p>
+          <h2 style={{
+            margin: 0, fontSize: "16px", fontWeight: "600",
+            color: "var(--color-text)", lineHeight: "1.4",
+          }}>チャット</h2>
+          <p style={{
+            margin: "2px 0 0", fontSize: "12px",
+            color: "var(--color-text-muted)",
+          }}>AI経理社員</p>
         </div>
 
         {/* メッセージ一覧 */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "28px" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "var(--space-6) var(--space-8)" }}>
           {messages.map((msg, i) => (
             <div key={i} style={{
-              display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
-              marginBottom: "18px",
+              display: "flex",
+              justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+              marginBottom: "var(--space-5)",
             }}>
-              <div>
-                {msg.role === "assistant" && (
-                  <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", marginBottom: "6px" }}>AI経理社員</div>
-                )}
-                {msg.role === "user" && (
-                  <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", marginBottom: "6px", textAlign: "right" }}>あなた</div>
-                )}
+              <div style={{ maxWidth: "560px" }}>
                 <div style={{
-                  maxWidth: "520px", padding: "14px 18px",
-                  borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                  fontSize: "11px", fontWeight: "500",
+                  color: "var(--color-text-muted)",
+                  marginBottom: "var(--space-1)",
+                  textAlign: msg.role === "user" ? "right" : "left",
+                  paddingLeft: msg.role === "assistant" ? "var(--space-1)" : "0",
+                  paddingRight: msg.role === "user" ? "var(--space-1)" : "0",
+                }}>
+                  {msg.role === "assistant" ? "AI経理社員" : "あなた"}
+                </div>
+                <div style={{
+                  padding: "var(--space-3) var(--space-4)",
+                  borderRadius: msg.role === "user"
+                    ? "var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl)"
+                    : "var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm)",
                   background: msg.role === "user"
-                    ? "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)"
-                    : "white",
+                    ? "var(--color-user-bubble)"
+                    : "var(--color-card)",
                   color: msg.role === "user" ? "white" : "var(--color-text)",
-                  fontSize: "15px", lineHeight: "1.7",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  fontSize: "14px",
+                  lineHeight: "1.75",
+                  border: msg.role === "assistant" ? "1px solid var(--color-border)" : "none",
+                  boxShadow: "var(--shadow-xs)",
                   whiteSpace: "pre-wrap",
                 }}>
                   {msg.content}
@@ -138,11 +159,15 @@ export default function ChatPage() {
             </div>
           ))}
           {loading && (
-            <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: "18px" }}>
+            <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: "var(--space-5)" }}>
               <div style={{
-                padding: "14px 18px", borderRadius: "18px 18px 18px 4px",
-                background: "white", color: "var(--color-text-secondary)",
-                fontSize: "15px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                padding: "var(--space-3) var(--space-4)",
+                borderRadius: "var(--radius-xl) var(--radius-xl) var(--radius-xl) var(--radius-sm)",
+                background: "var(--color-card)",
+                color: "var(--color-text-muted)",
+                fontSize: "14px",
+                border: "1px solid var(--color-border)",
+                boxShadow: "var(--shadow-xs)",
               }}>
                 考え中...
               </div>
@@ -151,57 +176,98 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* キーワードボタン */}
-        <div style={{ padding: "0 28px 14px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {KEYWORDS.map((kw) => {
-            const Icon = kw.icon;
-            return (
-              <button key={kw.label} onClick={() => sendMessage(kw.message)}
-                style={{
-                  padding: "8px 16px", borderRadius: "980px",
-                  border: "1px solid var(--color-border)",
-                  background: "white", color: "var(--color-text)",
-                  fontSize: "13px", cursor: "pointer",
-                  fontFamily: "var(--font-sans)",
-                  display: "flex", alignItems: "center", gap: "6px",
-                }}
-              >
-                <Icon size={14} color="#00D4FF" />
-                {kw.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 入力エリア */}
+        {/* 下部エリア：クイックアクション + 入力欄 */}
         <div style={{
-          padding: "14px 28px 28px",
-          display: "flex", gap: "12px", alignItems: "flex-end",
+          borderTop: "1px solid var(--color-border)",
+          background: "var(--color-card)",
+          padding: "var(--space-4) var(--space-8) var(--space-6)",
         }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
-            placeholder="メッセージを入力..."
-            style={{
-              flex: 1, padding: "14px 18px",
-              border: "1px solid var(--color-border)",
-              borderRadius: "980px", fontSize: "15px",
-              outline: "none", fontFamily: "var(--font-sans)",
+          {/* クイックアクション */}
+          <div style={{
+            display: "flex", gap: "var(--space-2)", flexWrap: "wrap",
+            marginBottom: "var(--space-3)",
+          }}>
+            {KEYWORDS.map((kw) => {
+              const Icon = kw.icon;
+              return (
+                <button key={kw.label} onClick={() => sendMessage(kw.message)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--color-border)",
+                    background: "var(--color-background)",
+                    color: "var(--color-text-secondary)",
+                    fontSize: "12.5px",
+                    cursor: "pointer",
+                    fontFamily: "var(--font-sans)",
+                    display: "flex", alignItems: "center", gap: "6px",
+                    transition: "background 0.15s, border-color 0.15s",
+                    lineHeight: "1.5",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--color-primary)";
+                    e.currentTarget.style.color = "var(--color-primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--color-border)";
+                    e.currentTarget.style.color = "var(--color-text-secondary)";
+                  }}
+                >
+                  <Icon size={14} strokeWidth={1.75} />
+                  {kw.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 入力エリア */}
+          <div style={{
+            display: "flex", gap: "var(--space-2)", alignItems: "flex-end",
+          }}>
+            <div style={{
+              flex: 1,
+              borderRadius: "var(--radius-lg)",
+              border: inputFocused ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+              boxShadow: inputFocused ? "var(--shadow-ring)" : "var(--shadow-sm)",
               background: "white",
-            }}
-          />
-          <button onClick={() => sendMessage(input)} disabled={loading}
-            style={{
-              width: "44px", height: "44px", borderRadius: "50%",
-              background: "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)",
-              color: "white",
-              border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <Send size={18} />
-          </button>
+              transition: "border-color 0.15s, box-shadow 0.15s",
+            }}>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                placeholder="メッセージを入力..."
+                style={{
+                  width: "100%",
+                  padding: "var(--space-3) var(--space-4)",
+                  border: "none",
+                  borderRadius: "var(--radius-lg)",
+                  fontSize: "14px",
+                  outline: "none",
+                  fontFamily: "var(--font-sans)",
+                  background: "transparent",
+                  color: "var(--color-text)",
+                  lineHeight: "1.5",
+                }}
+              />
+            </div>
+            <button onClick={() => sendMessage(input)} disabled={loading}
+              style={{
+                width: "42px", height: "42px",
+                borderRadius: "var(--radius-lg)",
+                background: input.trim() ? "var(--color-primary)" : "var(--color-border)",
+                color: "white",
+                border: "none", cursor: input.trim() ? "pointer" : "default",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.15s",
+                flexShrink: 0,
+              }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

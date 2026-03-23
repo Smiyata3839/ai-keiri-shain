@@ -87,7 +87,7 @@ export function Sidebar({ className }: { className?: string }) {
       style={{
         width: "260px",
         minWidth: "260px",
-        background: "linear-gradient(180deg, #0B1426 0%, #0D1B2A 100%)",
+        background: "var(--color-sidebar)",
         color: "white",
         display: "flex",
         flexDirection: "column",
@@ -101,42 +101,42 @@ export function Sidebar({ className }: { className?: string }) {
       {/* ロゴ */}
       <div
         style={{
-          padding: "24px 20px 20px",
-          borderBottom: "1px solid rgba(0,212,255,0.1)",
+          padding: "var(--space-6) var(--space-5) var(--space-5)",
+          borderBottom: "1px solid var(--color-sidebar-border)",
           display: "flex",
           alignItems: "center",
-          gap: "12px",
+          gap: "var(--space-3)",
         }}
       >
         <div
           style={{
-            width: "36px",
-            height: "36px",
-            background: "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)",
-            borderRadius: "10px",
+            width: "34px",
+            height: "34px",
+            background: "var(--color-primary)",
+            borderRadius: "var(--radius-md)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Briefcase size={18} color="white" />
+          <Briefcase size={17} color="white" />
         </div>
-        <span style={{ fontSize: "16px", fontWeight: "700", letterSpacing: "-0.3px" }}>
+        <span style={{ fontSize: "15px", fontWeight: "600", letterSpacing: "-0.2px" }}>
           AI経理社員
         </span>
       </div>
 
       {/* メニュー */}
-      <nav style={{ flex: 1, padding: "16px 10px" }}>
+      <nav style={{ flex: 1, padding: "var(--space-4) var(--space-2)" }}>
         {menuGroups.map((group) => (
-          <div key={group.label} style={{ marginBottom: "24px" }}>
+          <div key={group.label} style={{ marginBottom: "var(--space-5)" }}>
             <div
               style={{
                 fontSize: "11px",
-                fontWeight: "600",
+                fontWeight: "500",
                 color: "rgba(255,255,255,0.3)",
-                padding: "0 10px 8px",
-                letterSpacing: "0.1em",
+                padding: "0 var(--space-3) var(--space-2)",
+                letterSpacing: "0.06em",
                 textTransform: "uppercase",
               }}
             >
@@ -154,29 +154,30 @@ export function Sidebar({ className }: { className?: string }) {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    padding: "10px 12px",
-                    borderRadius: "8px",
+                    gap: "var(--space-3)",
+                    padding: "var(--space-2) var(--space-3)",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    marginBottom: "2px",
+                    marginBottom: "1px",
                     background: isActive
-                      ? "rgba(0,212,255,0.15)"
+                      ? "var(--color-sidebar-active)"
                       : "transparent",
-                    color: isActive ? "#00D4FF" : "rgba(255,255,255,0.6)",
-                    fontSize: "14px",
-                    fontWeight: isActive ? "600" : "400",
-                    transition: "all 0.15s",
+                    color: isActive ? "var(--color-sidebar-text-active)" : "var(--color-sidebar-text)",
+                    fontSize: "13.5px",
+                    fontWeight: isActive ? "500" : "400",
+                    transition: "background 0.15s, color 0.15s",
+                    lineHeight: "1.5",
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive)
-                      e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.background = "var(--color-sidebar-hover)";
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive)
                       e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon size={16} strokeWidth={isActive ? 2 : 1.75} />
                   <span>{item.label}</span>
                 </div>
               );
@@ -188,8 +189,8 @@ export function Sidebar({ className }: { className?: string }) {
       {/* ログアウト */}
       <div
         style={{
-          padding: "16px 10px 24px",
-          borderTop: "1px solid rgba(0,212,255,0.1)",
+          padding: "var(--space-4) var(--space-2) var(--space-6)",
+          borderTop: "1px solid var(--color-sidebar-border)",
         }}
       >
         <div
@@ -197,20 +198,22 @@ export function Sidebar({ className }: { className?: string }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            padding: "10px 12px",
-            borderRadius: "8px",
+            gap: "var(--space-3)",
+            padding: "var(--space-2) var(--space-3)",
+            borderRadius: "var(--radius-sm)",
             cursor: "pointer",
-            fontSize: "14px",
-            color: "rgba(255,255,255,0.4)",
-            transition: "all 0.15s",
+            fontSize: "13.5px",
+            color: "rgba(255,255,255,0.35)",
+            transition: "background 0.15s, color 0.15s",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.05)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.background = "transparent")
-          }
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--color-sidebar-hover)";
+            e.currentTarget.style.color = "rgba(255,255,255,0.6)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "rgba(255,255,255,0.35)";
+          }}
         >
           <LogOut size={16} />
           <span>ログアウト</span>
