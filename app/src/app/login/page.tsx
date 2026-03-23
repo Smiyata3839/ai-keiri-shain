@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { Briefcase } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -38,7 +39,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "var(--color-background)",
+      background: "linear-gradient(135deg, #0B1426 0%, #1B2A4A 50%, #0D1B2A 100%)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -46,45 +47,45 @@ export default function LoginPage() {
     }}>
       <div style={{
         background: "var(--color-card)",
-        borderRadius: "var(--radius-card)",
-        padding: "48px",
+        borderRadius: "20px",
+        padding: "52px",
         width: "100%",
-        maxWidth: "400px",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+        maxWidth: "420px",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
       }}>
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
+        <div style={{ textAlign: "center", marginBottom: "36px" }}>
           <div style={{
-            width: "48px", height: "48px",
-            background: "var(--color-primary)",
-            borderRadius: "12px",
-            margin: "0 auto 16px",
+            width: "52px", height: "52px",
+            background: "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)",
+            borderRadius: "14px",
+            margin: "0 auto 18px",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <span style={{ color: "white", fontSize: "24px" }}>💼</span>
+            <Briefcase size={26} color="white" />
           </div>
-          <h1 style={{ fontSize: "24px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
+          <h1 style={{ fontSize: "26px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
             AI経理社員
           </h1>
-          <p style={{ color: "var(--color-text-secondary)", marginTop: "8px", fontSize: "14px" }}>
+          <p style={{ color: "var(--color-text-secondary)", marginTop: "8px", fontSize: "15px" }}>
             ログインしてください
           </p>
         </div>
 
         {error && (
           <div style={{
-            background: error.includes("送信") ? "#e8f5e9" : "#ffeaea",
-            color: error.includes("送信") ? "#2e7d32" : "#c62828",
+            background: error.includes("送信") ? "#d1fae5" : "#fef2f2",
+            color: error.includes("送信") ? "#065f46" : "#dc2626",
             padding: "12px 16px",
-            borderRadius: "8px",
+            borderRadius: "10px",
             fontSize: "14px",
-            marginBottom: "16px",
+            marginBottom: "20px",
           }}>
             {error}
           </div>
         )}
 
-        <div style={{ marginBottom: "16px" }}>
-          <label style={{ fontSize: "14px", fontWeight: "500", color: "var(--color-text)", display: "block", marginBottom: "6px" }}>
+        <div style={{ marginBottom: "18px" }}>
+          <label style={{ fontSize: "14px", fontWeight: "500", color: "var(--color-text)", display: "block", marginBottom: "8px" }}>
             メールアドレス
           </label>
           <input
@@ -93,17 +94,17 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="example@company.com"
             style={{
-              width: "100%", padding: "12px 16px",
+              width: "100%", padding: "14px 16px",
               border: "1px solid var(--color-border)",
-              borderRadius: "8px", fontSize: "16px",
+              borderRadius: "10px", fontSize: "16px",
               outline: "none", boxSizing: "border-box",
               fontFamily: "var(--font-sans)",
             }}
           />
         </div>
 
-        <div style={{ marginBottom: "24px" }}>
-          <label style={{ fontSize: "14px", fontWeight: "500", color: "var(--color-text)", display: "block", marginBottom: "6px" }}>
+        <div style={{ marginBottom: "28px" }}>
+          <label style={{ fontSize: "14px", fontWeight: "500", color: "var(--color-text)", display: "block", marginBottom: "8px" }}>
             パスワード
           </label>
           <input
@@ -112,9 +113,9 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             style={{
-              width: "100%", padding: "12px 16px",
+              width: "100%", padding: "14px 16px",
               border: "1px solid var(--color-border)",
-              borderRadius: "8px", fontSize: "16px",
+              borderRadius: "10px", fontSize: "16px",
               outline: "none", boxSizing: "border-box",
               fontFamily: "var(--font-sans)",
             }}
@@ -125,8 +126,8 @@ export default function LoginPage() {
           onClick={handleLogin}
           disabled={loading}
           style={{
-            width: "100%", padding: "14px",
-            background: "var(--color-primary)",
+            width: "100%", padding: "16px",
+            background: "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)",
             color: "white", border: "none",
             borderRadius: "var(--radius-button)",
             fontSize: "16px", fontWeight: "600",
@@ -143,10 +144,10 @@ export default function LoginPage() {
           onClick={handleSignUp}
           disabled={loading}
           style={{
-            width: "100%", padding: "14px",
+            width: "100%", padding: "16px",
             background: "transparent",
-            color: "var(--color-primary)",
-            border: "1px solid var(--color-primary)",
+            color: "#00D4FF",
+            border: "2px solid #00D4FF",
             borderRadius: "var(--radius-button)",
             fontSize: "16px", fontWeight: "600",
             cursor: loading ? "not-allowed" : "pointer",

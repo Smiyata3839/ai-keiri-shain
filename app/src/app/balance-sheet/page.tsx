@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Sidebar } from "@/components/Sidebar";
 
 type BSRow = { account: string; amount: number };
 type BSData = {
@@ -205,82 +206,10 @@ export default function BalanceSheetPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      {/* サイドバー */}
-      <div style={{
-        width: "240px", minWidth: "240px",
-        background: "#1c1c1e", color: "white",
-        display: "flex", flexDirection: "column",
-        height: "100vh", position: "fixed", left: 0, top: 0,
-        overflowY: "auto",
-      }}>
-        <div style={{
-          padding: "20px 16px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}>
-          <div style={{
-            width: "32px", height: "32px", background: "var(--color-primary)",
-            borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
-          }}>💼</div>
-          <span style={{ fontSize: "15px", fontWeight: "700" }}>AI経理社員</span>
-        </div>
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {[
-            { label: "メイン", items: [{ icon: "💬", label: "チャット", path: "/chat" }] },
-            { label: "受発注", items: [
-              { icon: "📄", label: "請求書発行", path: "/invoices/new" },
-              { icon: "📋", label: "請求書一覧", path: "/invoices" },
-              { icon: "💰", label: "売掛管理", path: "/receivables" },
-            ]},
-            { label: "会計", items: [
-              { icon: "🏦", label: "銀行明細取込", path: "/bank" },
-              { icon: "📒", label: "仕訳一覧", path: "/journals" },
-              { icon: "📒", label: "総勘定元帳", path: "/general-ledger" },
-              { icon: "📊", label: "残高試算表", path: "/trial-balance" },
-              { icon: "📈", label: "貸借対照表", path: "/balance-sheet" },
-              { icon: "📉", label: "損益計算書", path: "/profit-loss" },
-            ]},
-            { label: "経費", items: [{ icon: "🧾", label: "領収書アップロード", path: "/receipts" }] },
-            { label: "設定", items: [
-              { icon: "👥", label: "顧客管理", path: "/customers" },
-              { icon: "🏢", label: "自社情報", path: "/company" },
-            ]},
-          ].map((group) => (
-            <div key={group.label} style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: "rgba(255,255,255,0.35)", padding: "0 8px 6px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <div key={item.path} onClick={() => router.push(item.path)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 10px", borderRadius: "7px", cursor: "pointer", marginBottom: "2px",
-                    background: item.path === activePath ? "rgba(0,113,227,0.3)" : "transparent",
-                    color: item.path === activePath ? "white" : "rgba(255,255,255,0.7)",
-                    fontSize: "13.5px",
-                  }}
-                  onMouseEnter={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                  onMouseLeave={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "transparent"; }}
-                >
-                  <span>{item.icon}</span><span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div style={{ padding: "16px 8px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div onClick={() => { supabase.auth.signOut(); router.push("/login"); }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "7px", cursor: "pointer", fontSize: "13.5px", color: "rgba(255,255,255,0.5)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            <span>🚪</span><span>ログアウト</span>
-          </div>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "240px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
+      <div style={{ marginLeft: "260px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
       <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div>
@@ -324,9 +253,9 @@ export default function BalanceSheetPage() {
           ] as { key: PeriodType; label: string }[]).map(tab => (
             <button key={tab.key} onClick={() => setPeriodType(tab.key)}
               style={{
-                backgroundColor: periodType === tab.key ? "#1d1d1f" : "#fff",
+                backgroundColor: periodType === tab.key ? "#0D1B2A" : "#fff",
                 color: periodType === tab.key ? "#fff" : "#1d1d1f",
-                border: periodType === tab.key ? "1px solid #1d1d1f" : "1px solid #d2d2d7",
+                border: periodType === tab.key ? "1px solid #0D1B2A" : "1px solid #d2d2d7",
                 borderRadius: 980, fontSize: 13, padding: "7px 14px", cursor: "pointer",
                 fontWeight: periodType === tab.key ? 600 : 400,
               }}>
@@ -344,7 +273,7 @@ export default function BalanceSheetPage() {
             {/* 合計バナー */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 28 }}>
               {[
-                { label: "資産合計", value: fmt(totalAssets), color: "#0071e3" },
+                { label: "資産合計", value: fmt(totalAssets), color: "#00D4FF" },
                 { label: "負債合計", value: fmt(totalLiabilities), color: "#d70015" },
                 { label: "純資産合計", value: fmt(totalEquity), color: "#6e36c8" },
                 { label: "負債・純資産合計", value: fmt(totalLiabilitiesAndEquity), color: "#1d1d1f" },
@@ -360,12 +289,12 @@ export default function BalanceSheetPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
               {/* 左：資産 */}
               <div style={{ backgroundColor: "#fff", borderRadius: 16, padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", border: "1px solid #f0f0f0" }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#0071e3", margin: "0 0 20px" }}>資産の部</h2>
-                <Section title="流動資産" rows={data.currentAssets} color="#0071e3" />
-                <Section title="固定資産" rows={data.fixedAssets} color="#0071e3" />
+                <h2 style={{ fontSize: 16, fontWeight: 700, color: "#00D4FF", margin: "0 0 20px" }}>資産の部</h2>
+                <Section title="流動資産" rows={data.currentAssets} color="#00D4FF" />
+                <Section title="固定資産" rows={data.fixedAssets} color="#00D4FF" />
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: "2px solid #1d1d1f", marginTop: 8 }}>
                   <span style={{ fontSize: 15, fontWeight: 700, color: "#1d1d1f" }}>資産合計</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: "#0071e3" }}>{fmt(totalAssets)}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#00D4FF" }}>{fmt(totalAssets)}</span>
                 </div>
               </div>
 

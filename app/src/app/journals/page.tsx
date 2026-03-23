@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Sidebar } from "@/components/Sidebar";
 
 type Journal = {
   id: string;
@@ -154,82 +155,10 @@ export default function JournalsPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      {/* サイドバー */}
-      <div style={{
-        width: "240px", minWidth: "240px",
-        background: "#1c1c1e", color: "white",
-        display: "flex", flexDirection: "column",
-        height: "100vh", position: "fixed", left: 0, top: 0,
-        overflowY: "auto",
-      }}>
-        <div style={{
-          padding: "20px 16px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}>
-          <div style={{
-            width: "32px", height: "32px", background: "var(--color-primary)",
-            borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
-          }}>💼</div>
-          <span style={{ fontSize: "15px", fontWeight: "700" }}>AI経理社員</span>
-        </div>
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {[
-            { label: "メイン", items: [{ icon: "💬", label: "チャット", path: "/chat" }] },
-            { label: "受発注", items: [
-              { icon: "📄", label: "請求書発行", path: "/invoices/new" },
-              { icon: "📋", label: "請求書一覧", path: "/invoices" },
-              { icon: "💰", label: "売掛管理", path: "/receivables" },
-            ]},
-            { label: "会計", items: [
-              { icon: "🏦", label: "銀行明細取込", path: "/bank" },
-              { icon: "📒", label: "仕訳一覧", path: "/journals" },
-              { icon: "📒", label: "総勘定元帳", path: "/general-ledger" },
-              { icon: "📊", label: "残高試算表", path: "/trial-balance" },
-              { icon: "📈", label: "貸借対照表", path: "/balance-sheet" },
-              { icon: "📉", label: "損益計算書", path: "/profit-loss" },
-            ]},
-            { label: "経費", items: [{ icon: "🧾", label: "領収書アップロード", path: "/receipts" }] },
-            { label: "設定", items: [
-              { icon: "👥", label: "顧客管理", path: "/customers" },
-              { icon: "🏢", label: "自社情報", path: "/company" },
-            ]},
-          ].map((group) => (
-            <div key={group.label} style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: "rgba(255,255,255,0.35)", padding: "0 8px 6px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <div key={item.path} onClick={() => router.push(item.path)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 10px", borderRadius: "7px", cursor: "pointer", marginBottom: "2px",
-                    background: item.path === activePath ? "rgba(0,113,227,0.3)" : "transparent",
-                    color: item.path === activePath ? "white" : "rgba(255,255,255,0.7)",
-                    fontSize: "13.5px",
-                  }}
-                  onMouseEnter={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                  onMouseLeave={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "transparent"; }}
-                >
-                  <span>{item.icon}</span><span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div style={{ padding: "16px 8px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div onClick={() => { supabase.auth.signOut(); router.push("/login"); }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "7px", cursor: "pointer", fontSize: "13.5px", color: "rgba(255,255,255,0.5)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            <span>🚪</span><span>ログアウト</span>
-          </div>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "240px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
+      <div style={{ marginLeft: "260px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
       {/* ヘッダー */}
       <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -249,7 +178,7 @@ export default function JournalsPage() {
                 setFormAmount(""); setFormDesc("");
               }
             }}
-            style={{ backgroundColor: "#0071e3", color: "#fff", border: "none", borderRadius: 980, padding: "10px 20px", fontSize: 14, fontWeight: 500, cursor: "pointer" }}
+            style={{ backgroundColor: "#00D4FF", color: "#fff", border: "none", borderRadius: 980, padding: "10px 20px", fontSize: 14, fontWeight: 500, cursor: "pointer" }}
           >
             ＋ 仕訳を追加
           </button>
@@ -277,7 +206,7 @@ export default function JournalsPage() {
                         setFormStep(2);
                       }}
                       style={{
-                        border: selectedTemplate === idx ? "2px solid #0071e3" : "1px solid #d2d2d7",
+                        border: selectedTemplate === idx ? "2px solid #00D4FF" : "1px solid #d2d2d7",
                         backgroundColor: selectedTemplate === idx ? "#e8f1fb" : "#fff",
                         borderRadius: 12,
                         padding: "14px 16px",
@@ -287,7 +216,7 @@ export default function JournalsPage() {
                         color: "#1d1d1f",
                         transition: "border-color 0.15s, background-color 0.15s",
                       }}
-                      onMouseEnter={e => { if (selectedTemplate !== idx) e.currentTarget.style.borderColor = "#0071e3"; }}
+                      onMouseEnter={e => { if (selectedTemplate !== idx) e.currentTarget.style.borderColor = "#00D4FF"; }}
                       onMouseLeave={e => { if (selectedTemplate !== idx) e.currentTarget.style.borderColor = "#d2d2d7"; }}
                     >
                       {tmpl.label}
@@ -295,7 +224,7 @@ export default function JournalsPage() {
                   ))}
                 </div>
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 20 }}>
-                  <button onClick={() => setShowForm(false)} style={{ backgroundColor: "#f5f5f7", color: "#1d1d1f", border: "1px solid #d2d2d7", borderRadius: 980, padding: "10px 20px", fontSize: 14, cursor: "pointer" }}>キャンセル</button>
+                  <button onClick={() => setShowForm(false)} style={{ backgroundColor: "#f5f5f7", color: "#0D1B2A", border: "1px solid #d2d2d7", borderRadius: 980, padding: "10px 20px", fontSize: 14, cursor: "pointer" }}>キャンセル</button>
                 </div>
               </div>
             )}
@@ -309,7 +238,7 @@ export default function JournalsPage() {
                 <div>
                   <button
                     onClick={() => { setFormStep(1); setSelectedTemplate(null); setFormDebit(""); setFormCredit(""); }}
-                    style={{ background: "none", border: "none", color: "#0071e3", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: 0, marginBottom: 16 }}
+                    style={{ background: "none", border: "none", color: "#00D4FF", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: 0, marginBottom: 16 }}
                   >
                     ← テンプレートを変更
                   </button>
@@ -355,8 +284,8 @@ export default function JournalsPage() {
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                    <button onClick={() => setShowForm(false)} style={{ backgroundColor: "#f5f5f7", color: "#1d1d1f", border: "1px solid #d2d2d7", borderRadius: 980, padding: "10px 20px", fontSize: 14, cursor: "pointer" }}>キャンセル</button>
-                    <button onClick={handleAdd} style={{ backgroundColor: "#0071e3", color: "#fff", border: "none", borderRadius: 980, padding: "10px 20px", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>保存</button>
+                    <button onClick={() => setShowForm(false)} style={{ backgroundColor: "#f5f5f7", color: "#0D1B2A", border: "1px solid #d2d2d7", borderRadius: 980, padding: "10px 20px", fontSize: 14, cursor: "pointer" }}>キャンセル</button>
+                    <button onClick={handleAdd} style={{ backgroundColor: "#00D4FF", color: "#fff", border: "none", borderRadius: 980, padding: "10px 20px", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>保存</button>
                   </div>
                 </div>
               );
@@ -368,7 +297,7 @@ export default function JournalsPage() {
         <div style={{ backgroundColor: "#fff", borderRadius: 16, padding: "20px 24px", marginBottom: 20, border: "1px solid #f0f0f0", position: "relative" }}>
           <button
             onClick={resetFilters}
-            style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "#0071e3", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: "4px 8px" }}
+            style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "#00D4FF", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: "4px 8px" }}
           >
             リセット
           </button>
@@ -397,8 +326,8 @@ export default function JournalsPage() {
                   padding: "6px 16px", fontSize: 13, fontWeight: 500, cursor: "pointer",
                   border: "1px solid #d2d2d7", borderRight: val === "manual" ? "1px solid #d2d2d7" : "none",
                   borderRadius: val === "all" ? "8px 0 0 8px" : val === "manual" ? "0 8px 8px 0" : 0,
-                  backgroundColor: filterSource === val ? "#0071e3" : "#fff",
-                  color: filterSource === val ? "#fff" : "#1d1d1f",
+                  backgroundColor: filterSource === val ? "#00D4FF" : "#fff",
+                  color: filterSource === val ? "#fff" : "#0D1B2A",
                 }}
               >
                 {label}
@@ -430,12 +359,12 @@ export default function JournalsPage() {
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
                     >
                       <td style={{ padding: "14px 16px", fontSize: 13, color: "#6e6e73" }}>{fmtDate(j.journal_date)}</td>
-                      <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#0071e3" }}>{j.debit_account}</td>
+                      <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#00D4FF" }}>{j.debit_account}</td>
                       <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 500, color: "#1a7f37" }}>{j.credit_account}</td>
                       <td style={{ padding: "14px 16px", fontSize: 14, fontWeight: 600, color: "#1d1d1f", textAlign: "right" }}>{fmt(j.amount)}</td>
                       <td style={{ padding: "14px 16px", fontSize: 13, color: "#6e6e73" }}>{j.description}</td>
                       <td style={{ padding: "14px 16px" }}>
-                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 980, fontSize: 11, fontWeight: 600, backgroundColor: j.source === "manual" ? "#f5f5f7" : "#e8f1fb", color: j.source === "manual" ? "#6e6e73" : "#0071e3", border: `1px solid ${j.source === "manual" ? "#d2d2d7" : "#0071e3"}` }}>
+                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 980, fontSize: 11, fontWeight: 600, backgroundColor: j.source === "manual" ? "#f5f5f7" : "#e8f1fb", color: j.source === "manual" ? "#6e6e73" : "#00D4FF", border: `1px solid ${j.source === "manual" ? "#d2d2d7" : "#00D4FF"}` }}>
                           {j.source === "manual" ? "手動" : "自動"}
                         </span>
                       </td>

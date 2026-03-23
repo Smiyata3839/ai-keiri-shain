@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Sidebar } from "@/components/Sidebar";
 
 type ReceiptItem = {
   date: string;
@@ -190,82 +191,10 @@ export default function ReceiptsPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      {/* サイドバー */}
-      <div style={{
-        width: "240px", minWidth: "240px",
-        background: "#1c1c1e", color: "white",
-        display: "flex", flexDirection: "column",
-        height: "100vh", position: "fixed", left: 0, top: 0,
-        overflowY: "auto",
-      }}>
-        <div style={{
-          padding: "20px 16px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}>
-          <div style={{
-            width: "32px", height: "32px", background: "var(--color-primary)",
-            borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
-          }}>💼</div>
-          <span style={{ fontSize: "15px", fontWeight: "700" }}>AI経理社員</span>
-        </div>
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {[
-            { label: "メイン", items: [{ icon: "💬", label: "チャット", path: "/chat" }] },
-            { label: "受発注", items: [
-              { icon: "📄", label: "請求書発行", path: "/invoices/new" },
-              { icon: "📋", label: "請求書一覧", path: "/invoices" },
-              { icon: "💰", label: "売掛管理", path: "/receivables" },
-            ]},
-            { label: "会計", items: [
-              { icon: "🏦", label: "銀行明細取込", path: "/bank" },
-              { icon: "📒", label: "仕訳一覧", path: "/journals" },
-              { icon: "📒", label: "総勘定元帳", path: "/general-ledger" },
-              { icon: "📊", label: "残高試算表", path: "/trial-balance" },
-              { icon: "📈", label: "貸借対照表", path: "/balance-sheet" },
-              { icon: "📉", label: "損益計算書", path: "/profit-loss" },
-            ]},
-            { label: "経費", items: [{ icon: "🧾", label: "領収書アップロード", path: "/receipts" }] },
-            { label: "設定", items: [
-              { icon: "👥", label: "顧客管理", path: "/customers" },
-              { icon: "🏢", label: "自社情報", path: "/company" },
-            ]},
-          ].map((group) => (
-            <div key={group.label} style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: "rgba(255,255,255,0.35)", padding: "0 8px 6px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <div key={item.path} onClick={() => router.push(item.path)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 10px", borderRadius: "7px", cursor: "pointer", marginBottom: "2px",
-                    background: item.path === activePath ? "rgba(0,113,227,0.3)" : "transparent",
-                    color: item.path === activePath ? "white" : "rgba(255,255,255,0.7)",
-                    fontSize: "13.5px",
-                  }}
-                  onMouseEnter={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                  onMouseLeave={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "transparent"; }}
-                >
-                  <span>{item.icon}</span><span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div style={{ padding: "16px 8px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div onClick={() => { supabase.auth.signOut(); router.push("/login"); }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "7px", cursor: "pointer", fontSize: "13.5px", color: "rgba(255,255,255,0.5)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            <span>🚪</span><span>ログアウト</span>
-          </div>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "240px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
+      <div style={{ marginLeft: "260px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
         {/* ヘッダー */}
         <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, color: "#1d1d1f", margin: 0 }}>領収書アップロード</h1>
@@ -298,7 +227,7 @@ export default function ReceiptsPage() {
                 if (file) handleFile(file);
               }}
               style={{
-                border: `2px dashed ${dragOver ? "#0071e3" : "#d2d2d7"}`,
+                border: `2px dashed ${dragOver ? "#00D4FF" : "#d2d2d7"}`,
                 borderRadius: 12,
                 padding: "48px 32px",
                 textAlign: "center",
@@ -335,7 +264,7 @@ export default function ReceiptsPage() {
                     対応形式: JPEG / PNG / WebP / PDF
                   </p>
                   {fileName && (
-                    <p style={{ fontSize: 13, color: "#0071e3", margin: "8px 0 0", fontWeight: 500 }}>
+                    <p style={{ fontSize: 13, color: "#00D4FF", margin: "8px 0 0", fontWeight: 500 }}>
                       選択中: {fileName}
                     </p>
                   )}
@@ -377,7 +306,7 @@ export default function ReceiptsPage() {
                     <span style={{ fontSize: 15, fontWeight: 600, color: "#1d1d1f" }}>
                       #{idx + 1} {item.vendor || "不明"}
                     </span>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: "#0071e3" }}>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: "#00D4FF" }}>
                       ¥{(item.amount || 0).toLocaleString("ja-JP")}
                     </span>
                   </div>
@@ -463,7 +392,7 @@ export default function ReceiptsPage() {
                   }}>
                     <div style={{ fontWeight: 600, color: "#1e40af", marginBottom: 6 }}>仕訳プレビュー</div>
                     <div style={{ display: "flex", gap: 24 }}>
-                      <span>借方: <strong style={{ color: "#0071e3" }}>{item.category}</strong></span>
+                      <span>借方: <strong style={{ color: "#00D4FF" }}>{item.category}</strong></span>
                       <span>貸方: <strong style={{ color: "#1a7f37" }}>{getCreditAccount(item.payment_method)}</strong></span>
                       <span>金額: <strong>¥{(item.amount || 0).toLocaleString("ja-JP")}</strong></span>
                     </div>
@@ -477,7 +406,7 @@ export default function ReceiptsPage() {
                   onClick={handleRegister}
                   disabled={registering}
                   style={{
-                    backgroundColor: registering ? "#9ca3af" : "#0071e3",
+                    backgroundColor: registering ? "#9ca3af" : "#00D4FF",
                     color: "#fff", border: "none", borderRadius: 980,
                     padding: "14px 40px", fontSize: 16, fontWeight: 600,
                     cursor: registering ? "default" : "pointer",

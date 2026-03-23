@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Sidebar } from "@/components/Sidebar";
 
 type BankTransaction = {
   id: string;
@@ -196,82 +197,10 @@ export default function BankPage() {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      {/* サイドバー */}
-      <div style={{
-        width: "240px", minWidth: "240px",
-        background: "#1c1c1e", color: "white",
-        display: "flex", flexDirection: "column",
-        height: "100vh", position: "fixed", left: 0, top: 0,
-        overflowY: "auto",
-      }}>
-        <div style={{
-          padding: "20px 16px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}>
-          <div style={{
-            width: "32px", height: "32px", background: "var(--color-primary)",
-            borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
-          }}>💼</div>
-          <span style={{ fontSize: "15px", fontWeight: "700" }}>AI経理社員</span>
-        </div>
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {[
-            { label: "メイン", items: [{ icon: "💬", label: "チャット", path: "/chat" }] },
-            { label: "受発注", items: [
-              { icon: "📄", label: "請求書発行", path: "/invoices/new" },
-              { icon: "📋", label: "請求書一覧", path: "/invoices" },
-              { icon: "💰", label: "売掛管理", path: "/receivables" },
-            ]},
-            { label: "会計", items: [
-              { icon: "🏦", label: "銀行明細取込", path: "/bank" },
-              { icon: "📒", label: "仕訳一覧", path: "/journals" },
-              { icon: "📒", label: "総勘定元帳", path: "/general-ledger" },
-              { icon: "📊", label: "残高試算表", path: "/trial-balance" },
-              { icon: "📈", label: "貸借対照表", path: "/balance-sheet" },
-              { icon: "📉", label: "損益計算書", path: "/profit-loss" },
-            ]},
-            { label: "経費", items: [{ icon: "🧾", label: "領収書アップロード", path: "/receipts" }] },
-            { label: "設定", items: [
-              { icon: "👥", label: "顧客管理", path: "/customers" },
-              { icon: "🏢", label: "自社情報", path: "/company" },
-            ]},
-          ].map((group) => (
-            <div key={group.label} style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: "rgba(255,255,255,0.35)", padding: "0 8px 6px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <div key={item.path} onClick={() => router.push(item.path)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 10px", borderRadius: "7px", cursor: "pointer", marginBottom: "2px",
-                    background: item.path === activePath ? "rgba(0,113,227,0.3)" : "transparent",
-                    color: item.path === activePath ? "white" : "rgba(255,255,255,0.7)",
-                    fontSize: "13.5px",
-                  }}
-                  onMouseEnter={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                  onMouseLeave={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "transparent"; }}
-                >
-                  <span>{item.icon}</span><span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div style={{ padding: "16px 8px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div onClick={() => { supabase.auth.signOut(); router.push("/login"); }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "7px", cursor: "pointer", fontSize: "13.5px", color: "rgba(255,255,255,0.5)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            <span>🚪</span><span>ログアウト</span>
-          </div>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "240px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ marginLeft: "260px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
@@ -298,7 +227,7 @@ export default function BankPage() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
-              style={{ backgroundColor: importing ? "#6e6e73" : "#0071e3", color: "#fff", border: "none", borderRadius: 980, padding: "10px 20px", fontSize: 14, fontWeight: 500, cursor: importing ? "not-allowed" : "pointer" }}
+              style={{ backgroundColor: importing ? "#6e6e73" : "#00D4FF", color: "#fff", border: "none", borderRadius: 980, padding: "10px 20px", fontSize: 14, fontWeight: 500, cursor: importing ? "not-allowed" : "pointer" }}
             >
               {importing ? "取込中..." : "📂 CSVを取込む"}
             </button>
@@ -316,7 +245,7 @@ export default function BankPage() {
                 { label: "総件数", value: `${summary.total}件`, icon: "📋", accent: "#1d1d1f" },
                 { label: "消込済み", value: `${summary.matched}件`, icon: "✅", accent: "#1a7f37" },
                 { label: "未消込", value: `${summary.unmatched}件`, icon: "⏳", accent: "#bf5700" },
-                { label: "消込済み金額", value: fmt(summary.matchedAmount), icon: "💴", accent: "#0071e3" },
+                { label: "消込済み金額", value: fmt(summary.matchedAmount), icon: "💴", accent: "#00D4FF" },
               ].map(card => (
                 <div key={card.label} style={{ backgroundColor: "#fff", borderRadius: 16, padding: "20px 24px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", border: "1px solid #f0f0f0" }}>
                   <div style={{ fontSize: 13, color: "#6e6e73", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
@@ -328,8 +257,8 @@ export default function BankPage() {
             </div>
 
             {/* CSV形式の説明 */}
-            <div style={{ backgroundColor: "#f0f7ff", border: "1px solid #0071e3", borderRadius: 12, padding: "14px 20px", marginBottom: 24 }}>
-              <p style={{ fontSize: 13, color: "#0071e3", fontWeight: 600, margin: "0 0 4px" }}>📌 対応CSVフォーマット（銀行名から自動判定）</p>
+            <div style={{ backgroundColor: "#f0f7ff", border: "1px solid #00D4FF", borderRadius: 12, padding: "14px 20px", marginBottom: 24 }}>
+              <p style={{ fontSize: 13, color: "#00D4FF", fontWeight: 600, margin: "0 0 4px" }}>📌 対応CSVフォーマット（銀行名から自動判定）</p>
               <p style={{ fontSize: 12, color: "#1d1d1f", margin: 0 }}>1行目はヘッダー行（スキップされます）<br />
                 <strong>メガバンク形式</strong>（三菱UFJ・みずほ・三井住友）：取引日, 摘要, 出金金額, 入金金額, 残高<br />
                 <strong>地銀形式</strong>（八十二・阿波・百十四）：取引通番, 取引日, 出金金額, 入金金額, 摘要, 残高<br />
@@ -342,7 +271,7 @@ export default function BankPage() {
                 <button
                   key={key}
                   onClick={() => setActiveFilter(key)}
-                  style={{ padding: "7px 16px", borderRadius: 980, border: "1px solid", fontSize: 13, fontWeight: 500, cursor: "pointer", backgroundColor: activeFilter === key ? "#1d1d1f" : "#fff", color: activeFilter === key ? "#fff" : "#1d1d1f", borderColor: activeFilter === key ? "#1d1d1f" : "#d2d2d7" }}
+                  style={{ padding: "7px 16px", borderRadius: 980, border: "1px solid", fontSize: 13, fontWeight: 500, cursor: "pointer", backgroundColor: activeFilter === key ? "#0D1B2A" : "#fff", color: activeFilter === key ? "#fff" : "#0D1B2A", borderColor: activeFilter === key ? "#0D1B2A" : "#d2d2d7" }}
                 >
                   {label} ({key === "all" ? transactions.length : key === "matched" ? summary.matched : summary.unmatched})
                 </button>

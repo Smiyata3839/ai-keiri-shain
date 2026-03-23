@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Sidebar } from "@/components/Sidebar";
 
 type Invoice = {
   id: string;
@@ -153,86 +154,12 @@ export default function InvoiceListPage() {
     }
   };
 
-  const activePath = "/invoices";
-
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      {/* サイドバー */}
-      <div style={{
-        width: "240px", minWidth: "240px",
-        background: "#1c1c1e", color: "white",
-        display: "flex", flexDirection: "column",
-        height: "100vh", position: "fixed", left: 0, top: 0,
-        overflowY: "auto",
-      }}>
-        <div style={{
-          padding: "20px 16px 16px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          display: "flex", alignItems: "center", gap: "10px",
-        }}>
-          <div style={{
-            width: "32px", height: "32px", background: "var(--color-primary)",
-            borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px",
-          }}>💼</div>
-          <span style={{ fontSize: "15px", fontWeight: "700" }}>AI経理社員</span>
-        </div>
-        <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {[
-            { label: "メイン", items: [{ icon: "💬", label: "チャット", path: "/chat" }] },
-            { label: "受発注", items: [
-              { icon: "📄", label: "請求書発行", path: "/invoices/new" },
-              { icon: "📋", label: "請求書一覧", path: "/invoices" },
-              { icon: "💰", label: "売掛管理", path: "/receivables" },
-            ]},
-            { label: "会計", items: [
-              { icon: "🏦", label: "銀行明細取込", path: "/bank" },
-              { icon: "📒", label: "仕訳一覧", path: "/journals" },
-              { icon: "📒", label: "総勘定元帳", path: "/general-ledger" },
-              { icon: "📊", label: "残高試算表", path: "/trial-balance" },
-              { icon: "📈", label: "貸借対照表", path: "/balance-sheet" },
-              { icon: "📉", label: "損益計算書", path: "/profit-loss" },
-            ]},
-            { label: "経費", items: [{ icon: "🧾", label: "領収書アップロード", path: "/receipts" }] },
-            { label: "設定", items: [
-              { icon: "👥", label: "顧客管理", path: "/customers" },
-              { icon: "🏢", label: "自社情報", path: "/company" },
-            ]},
-          ].map((group) => (
-            <div key={group.label} style={{ marginBottom: "20px" }}>
-              <div style={{ fontSize: "11px", fontWeight: "600", color: "rgba(255,255,255,0.35)", padding: "0 8px 6px", letterSpacing: "0.08em", textTransform: "uppercase" as const }}>
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <div key={item.path} onClick={() => router.push(item.path)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "8px 10px", borderRadius: "7px", cursor: "pointer", marginBottom: "2px",
-                    background: item.path === activePath ? "rgba(0,113,227,0.3)" : "transparent",
-                    color: item.path === activePath ? "white" : "rgba(255,255,255,0.7)",
-                    fontSize: "13.5px",
-                  }}
-                  onMouseEnter={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                  onMouseLeave={(e) => { if (item.path !== activePath) e.currentTarget.style.background = "transparent"; }}
-                >
-                  <span>{item.icon}</span><span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div style={{ padding: "16px 8px 24px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div onClick={() => { supabase.auth.signOut(); router.push("/login"); }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "7px", cursor: "pointer", fontSize: "13.5px", color: "rgba(255,255,255,0.5)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            <span>🚪</span><span>ログアウト</span>
-          </div>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "240px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ marginLeft: "260px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",

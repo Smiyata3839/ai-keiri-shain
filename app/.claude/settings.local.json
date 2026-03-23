@@ -15,7 +15,8 @@
       "Bash(done)",
       "Bash(find /c/Users/smiya/ai-keiri-shain/app -type f \\\\\\(-name *.json -o -name *.yaml -o -name *.yml \\\\\\) -not -path */node_modules/*)",
       "Bash(find /c/Users/smiya/ai-keiri-shain/app -type f -name *chat* -o -name *message* -o -name *conversation*)",
-      "Bash(ls -la /c/Users/smiya/ai-keiri-shain/app/*.html)"
+      "Bash(ls -la /c/Users/smiya/ai-keiri-shain/app/*.html)",
+      "Bash(find /c/Users/smiya/ai-keiri-shain/app/node_modules/next/dist/docs -type f -name *.md)"
     ]
   }
 }
