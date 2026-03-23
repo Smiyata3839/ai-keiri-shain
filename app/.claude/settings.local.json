@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next:*)",
+      "Bash(find /c/Users/smiya/ai-keiri-shain/app -type f \\\\\\(-name *.sql -o -name migration* -o -name *schema* \\\\\\))",
+      "Bash(grep -E \"\\\\.\\(sql|ts\\)$\")",
+      "Bash(grep -E \"\\\\.\\(tsx?|json\\)$\")",
+      "Bash(npx tsc:*)",
+      "Bash(git stash:*)",
+      "Bash(ls -la /c/Users/smiya/ai-keiri-shain/app/*.md)",
+      "Bash(grep -r \"policy\\\\|RLS\\\\|row.*level\\\\|CREATE POLICY\\\\|ENABLE ROW\" /c/Users/smiya/ai-keiri-shain/app/src --include=*.ts --include=*.tsx --include=*.md)",
+      "Bash(grep:*)",
+      "Bash(for f:*)",
+      "Bash(do wc:*)",
+      "Bash(done)",
+      "Bash(find /c/Users/smiya/ai-keiri-shain/app -type f \\\\\\(-name *.json -o -name *.yaml -o -name *.yml \\\\\\) -not -path */node_modules/*)",
+      "Bash(find /c/Users/smiya/ai-keiri-shain/app -type f -name *chat* -o -name *message* -o -name *conversation*)",
+      "Bash(ls -la /c/Users/smiya/ai-keiri-shain/app/*.html)"
+    ]
+  }
+}
