@@ -219,7 +219,7 @@ export default function ReceivablesPage() {
       <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "260px", flex: 1, background: "var(--color-background, #f5f5f7)", minHeight: "100vh" }}>
+      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background, #f5f5f7)", minHeight: "100vh" }}>
       {/* ヘッダー */}
       <div
         style={{

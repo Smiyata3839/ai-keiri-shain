@@ -174,7 +174,7 @@ export default function CompanyPage() {
       <Sidebar />
 
       {/* メインコンテンツ */}
-      <div style={{ marginLeft: "260px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",

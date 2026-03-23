@@ -98,7 +98,7 @@ export default function ChatPage() {
 
       {/* チャットエリア */}
       <div style={{
-        marginLeft: "260px", flex: 1, display: "flex", flexDirection: "column",
+        marginLeft: "360px", flex: 1, display: "flex", flexDirection: "column",
         height: "100vh", background: "var(--color-background)",
       }}>
         {/* ヘッダー */}

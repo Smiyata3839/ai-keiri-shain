@@ -1,6 +1,7 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 import {
   MessageSquare,
   FilePlus,
@@ -14,7 +15,6 @@ import {
   Receipt,
   Users,
   Building2,
-  Briefcase,
   LogOut,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -85,8 +85,8 @@ export function Sidebar({ className }: { className?: string }) {
     <div
       className={className}
       style={{
-        width: "260px",
-        minWidth: "260px",
+        width: "360px",
+        minWidth: "360px",
         background: "var(--color-sidebar)",
         color: "white",
         display: "flex",
@@ -98,41 +98,40 @@ export function Sidebar({ className }: { className?: string }) {
         overflowY: "auto",
       }}
     >
-      {/* ロゴ */}
+      {/* キャラクターロゴ */}
       <div
         style={{
-          padding: "var(--space-6) var(--space-5) var(--space-5)",
+          padding: "var(--space-6) var(--space-6) var(--space-4)",
           borderBottom: "1px solid var(--color-sidebar-border)",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          gap: "var(--space-3)",
+          gap: "var(--space-2)",
         }}
       >
-        <div
+        <Image
+          src="/ai-accountant.png"
+          alt="AI経理社員"
+          width={120}
+          height={120}
           style={{
-            width: "34px",
-            height: "34px",
-            background: "var(--color-primary)",
-            borderRadius: "var(--radius-md)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            borderRadius: "var(--radius-lg)",
+            objectFit: "contain",
           }}
-        >
-          <Briefcase size={17} color="white" />
-        </div>
-        <span style={{ fontSize: "15px", fontWeight: "600", letterSpacing: "-0.2px" }}>
+          priority
+        />
+        <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
           AI経理社員
         </span>
       </div>
 
       {/* メニュー */}
-      <nav style={{ flex: 1, padding: "var(--space-4) var(--space-2)" }}>
+      <nav style={{ flex: 1, padding: "var(--space-4) var(--space-3)" }}>
         {menuGroups.map((group) => (
-          <div key={group.label} style={{ marginBottom: "var(--space-5)" }}>
+          <div key={group.label} style={{ marginBottom: "var(--space-6)" }}>
             <div
               style={{
-                fontSize: "11px",
+                fontSize: "12px",
                 fontWeight: "500",
                 color: "rgba(255,255,255,0.3)",
                 padding: "0 var(--space-3) var(--space-2)",
@@ -155,15 +154,15 @@ export function Sidebar({ className }: { className?: string }) {
                     display: "flex",
                     alignItems: "center",
                     gap: "var(--space-3)",
-                    padding: "var(--space-2) var(--space-3)",
-                    borderRadius: "var(--radius-sm)",
+                    padding: "var(--space-3) var(--space-4)",
+                    borderRadius: "var(--radius-md)",
                     cursor: "pointer",
-                    marginBottom: "1px",
+                    marginBottom: "2px",
                     background: isActive
                       ? "var(--color-sidebar-active)"
                       : "transparent",
                     color: isActive ? "var(--color-sidebar-text-active)" : "var(--color-sidebar-text)",
-                    fontSize: "13.5px",
+                    fontSize: "15px",
                     fontWeight: isActive ? "500" : "400",
                     transition: "background 0.15s, color 0.15s",
                     lineHeight: "1.5",
@@ -177,7 +176,7 @@ export function Sidebar({ className }: { className?: string }) {
                       e.currentTarget.style.background = "transparent";
                   }}
                 >
-                  <Icon size={16} strokeWidth={isActive ? 2 : 1.75} />
+                  <Icon size={18} strokeWidth={isActive ? 2 : 1.75} />
                   <span>{item.label}</span>
                 </div>
               );
@@ -189,7 +188,7 @@ export function Sidebar({ className }: { className?: string }) {
       {/* ログアウト */}
       <div
         style={{
-          padding: "var(--space-4) var(--space-2) var(--space-6)",
+          padding: "var(--space-4) var(--space-3) var(--space-6)",
           borderTop: "1px solid var(--color-sidebar-border)",
         }}
       >
@@ -199,10 +198,10 @@ export function Sidebar({ className }: { className?: string }) {
             display: "flex",
             alignItems: "center",
             gap: "var(--space-3)",
-            padding: "var(--space-2) var(--space-3)",
-            borderRadius: "var(--radius-sm)",
+            padding: "var(--space-3) var(--space-4)",
+            borderRadius: "var(--radius-md)",
             cursor: "pointer",
-            fontSize: "13.5px",
+            fontSize: "15px",
             color: "rgba(255,255,255,0.35)",
             transition: "background 0.15s, color 0.15s",
           }}
@@ -215,7 +214,7 @@ export function Sidebar({ className }: { className?: string }) {
             e.currentTarget.style.color = "rgba(255,255,255,0.35)";
           }}
         >
-          <LogOut size={16} />
+          <LogOut size={18} />
           <span>ログアウト</span>
         </div>
       </div>

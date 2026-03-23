@@ -157,7 +157,7 @@ export default function InvoiceDetailPage() {
       <div
         className="print-content"
         style={{
-          marginLeft: "260px",
+          marginLeft: "360px",
           flex: 1,
           background: "var(--color-background)",
           minHeight: "100vh",

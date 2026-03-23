@@ -30,7 +30,7 @@ export default function DashboardPage() {
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
       <Sidebar />
-      <div style={{ marginLeft: "260px", flex: 1, background: "var(--color-background)", padding: "40px" }}>
+      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", padding: "40px" }}>
         <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)", marginBottom: "8px" }}>
           ダッシュボード
         </h2>
