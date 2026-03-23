@@ -1,5 +1,18 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
 :root {
-  /* ── Color tokens ── */
+  /* ── Base ── */
+  --background: #f6f7f9;
+  --foreground: #1a1d26;
+
+  /* ── Sidebar ── */
   --color-sidebar: #111827;
   --color-sidebar-hover: rgba(255,255,255,0.06);
   --color-sidebar-active: rgba(99,148,255,0.12);
@@ -7,8 +20,11 @@
   --color-sidebar-text-active: #93b4ff;
   --color-sidebar-border: rgba(255,255,255,0.08);
 
+  /* ── Primary ── */
   --color-primary: #3b6df0;
   --color-primary-hover: #2f5ad4;
+
+  /* ── Surface ── */
   --color-background: #f6f7f9;
   --color-text: #1a1d26;
   --color-text-secondary: #6b7280;
@@ -17,6 +33,7 @@
   --color-card: #ffffff;
   --color-header-bg: rgba(255,255,255,0.92);
 
+  /* ── Accent ── */
   --color-accent-green: #16a34a;
   --color-accent-red: #dc2626;
   --color-accent-orange: #ea580c;
@@ -26,7 +43,7 @@
   --color-user-bubble: #2563eb;
   --color-user-bubble-hover: #1d4ed8;
 
-  /* ── Spacing tokens (4px grid) ── */
+  /* ── Spacing (4px grid) ── */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -35,14 +52,14 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  /* ── Radius tokens ── */
+  /* ── Radius ── */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* ── Shadow tokens ── */
+  /* ── Shadow ── */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
@@ -50,20 +67,6 @@
 
   /* ── Font ── */
   --font-sans: "Inter", "Helvetica Neue", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
-}
-
-@import "tailwindcss";
-
-:root {
-  --background: #f6f7f9;
-  --foreground: #1a1d26;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 body {
