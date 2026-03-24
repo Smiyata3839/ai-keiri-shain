@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -282,7 +283,27 @@ ${equityLines.length > 0 ? equityLines.join("\n") : "  （データなし）"}`)
 
 export async function POST(req: NextRequest) {
   try {
+    // 認証チェック
+    const serverSupabase = await createServerClient();
+    const { data: { user } } = await serverSupabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ content: "認証が必要です。" }, { status: 401 });
+    }
+
     const { messages, companyId } = await req.json();
+
+    // companyIdの所有権を検証
+    if (companyId) {
+      const { data: company } = await supabaseAdmin
+        .from("companies")
+        .select("id")
+        .eq("id", companyId)
+        .eq("user_id", user.id)
+        .single();
+      if (!company) {
+        return NextResponse.json({ content: "アクセス権限がありません。" }, { status: 403 });
+      }
+    }
 
     // DBデータをsystemプロンプトに注入してClaude APIで回答
     const dbContext = await buildDbContext(companyId || "");
