@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
+import { validateCustomer, validateCsvFile, validateCustomerCsvRows, type CustomerCsvRowError } from "@/lib/validation";
 
 const PAYMENT_TERMS_OPTIONS = [
   "即時",
@@ -49,6 +50,11 @@ export default function CustomersPage() {
   const [saving, setSaving] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [csvPreview, setCsvPreview] = useState<{
+    rows: { company_id: string; name: string; kana: string | null; transfer_kana: string | null; email: string | null; phone: string | null; address: string | null; payment_terms: string }[];
+    rawRows: Record<string, string>[];
+    errors: CustomerCsvRowError[];
+  } | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -93,8 +99,14 @@ export default function CustomersPage() {
 
   const handleAdd = async () => {
     setError("");
-    if (!formName.trim()) { setError("顧客名を入力してください"); return; }
     if (!companyId) { setError("自社情報を先に登録してください"); return; }
+
+    const validationErr = validateCustomer({
+      name: formName,
+      email: formEmail,
+      phone: formPhone,
+    });
+    if (validationErr) { setError(validationErr); return; }
 
     setSaving(true);
     try {
@@ -148,31 +160,32 @@ export default function CustomersPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleCsvImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // CSVヘッダーの表記揺れに対応するヘルパー
+  const getCol = (row: Record<string, string>, ...candidates: string[]): string | undefined => {
+    for (const key of candidates) {
+      if (row[key] !== undefined) return row[key];
+    }
+    const rowKeys = Object.keys(row);
+    for (const key of candidates) {
+      const found = rowKeys.find(k => k.includes(key) || key.includes(k));
+      if (found && row[found] !== undefined) return row[found];
+    }
+    return undefined;
+  };
+
+  const handleCsvSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !companyId) return;
+    e.target.value = "";
     setImportMsg("");
     setError("");
 
     Papa.parse<Record<string, string>>(file, {
       header: true,
       skipEmptyLines: true,
-      complete: async (results) => {
-        // CSVヘッダーの表記揺れに対応するヘルパー
-        const getCol = (row: Record<string, string>, ...candidates: string[]): string | undefined => {
-          for (const key of candidates) {
-            if (row[key] !== undefined) return row[key];
-          }
-          // 部分一致フォールバック
-          const rowKeys = Object.keys(row);
-          for (const key of candidates) {
-            const found = rowKeys.find(k => k.includes(key) || key.includes(k));
-            if (found && row[found] !== undefined) return row[found];
-          }
-          return undefined;
-        };
-
-        const rows = results.data
+      complete: (results) => {
+        const rawRows = results.data.filter((row) => Object.values(row).some((v) => v?.trim()));
+        const rows = rawRows
           .filter((row) => getCol(row, "顧客名")?.trim())
           .map((row) => ({
             company_id: companyId,
@@ -187,26 +200,49 @@ export default function CustomersPage() {
               : "月末締め翌月末払い",
           }));
 
-        if (rows.length === 0) {
-          setError("インポートできる行がありませんでした");
-          if (fileInputRef.current) fileInputRef.current.value = "";
+        if (rawRows.length === 0) {
+          setError("CSVにデータ行がありません");
           return;
         }
 
-        const { data, error: insertErr } = await supabase
-          .from("customers")
-          .insert(rows)
-          .select("id, name, kana, transfer_kana, email, phone, address, payment_terms");
+        // 顧客名が空の行もエラーとして検出するため、rawRowsからバリデーション用データを作る
+        const validationData = rawRows.map((row) => ({
+          name: getCol(row, "顧客名")?.trim() ?? "",
+          email: getCol(row, "メール", "メールアドレス", "email")?.trim() || null,
+          phone: getCol(row, "電話番号", "電話", "TEL")?.trim() || null,
+          transfer_kana: getCol(row, "銀行振込名", "銀行振込名（カナ）", "銀行振込名(カナ)", "振込名", "振込名義", "transfer_kana")?.trim() || null,
+        }));
 
-        if (insertErr) {
-          setError(insertErr.message);
-        } else if (data) {
-          setCustomers((prev) => [...prev, ...data]);
-          setImportMsg(`${data.length}件インポートしました`);
-        }
-        if (fileInputRef.current) fileInputRef.current.value = "";
+        const errors = validateCustomerCsvRows(validationData);
+        setCsvPreview({ rows, rawRows, errors });
       },
     });
+  };
+
+  const handleCsvImport = async () => {
+    if (!csvPreview || csvPreview.errors.length > 0) return;
+
+    setSaving(true);
+    setError("");
+    const rows = csvPreview.rows;
+    setCsvPreview(null);
+
+    try {
+      const { data, error: insertErr } = await supabase
+        .from("customers")
+        .insert(rows)
+        .select("id, name, kana, transfer_kana, email, phone, address, payment_terms");
+
+      if (insertErr) {
+        setError(insertErr.message);
+      } else if (data) {
+        setCustomers((prev) => [...prev, ...data]);
+        setImportMsg(`${data.length}件インポートしました`);
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "インポートに失敗しました");
+    }
+    setSaving(false);
   };
 
   const activePath = "/customers";
@@ -247,7 +283,7 @@ export default function CustomersPage() {
               }}>
               CSVインポート
             </button>
-            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCsvImport} style={{ display: "none" }} />
+            <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCsvSelect} style={{ display: "none" }} />
             <button onClick={() => setShowForm(true)}
               style={{
                 padding: "8px 20px", borderRadius: "var(--radius-button)",
@@ -274,6 +310,115 @@ export default function CustomersPage() {
               background: "#f0fdf4", border: "1px solid #86efac",
               borderRadius: "var(--radius-card)", color: "#16a34a", fontSize: "14px",
             }}>{importMsg}</div>
+          )}
+
+          {/* CSVプレビュー・バリデーションモーダル */}
+          {csvPreview && (
+            <div style={{
+              background: "var(--color-card)", borderRadius: "var(--radius-card)",
+              padding: "24px", marginBottom: "16px",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              border: csvPreview.errors.length > 0 ? "1px solid #fca5a5" : "1px solid #86efac",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>
+                  CSVインポート確認（{csvPreview.rawRows.length}行）
+                </div>
+                <button onClick={() => setCsvPreview(null)}
+                  style={{
+                    padding: "4px 12px", borderRadius: "var(--radius-button)",
+                    border: "1px solid var(--color-border)", background: "white",
+                    color: "var(--color-text)", fontSize: "12px", fontWeight: "600",
+                    cursor: "pointer", fontFamily: "var(--font-sans)",
+                  }}>
+                  キャンセル
+                </button>
+              </div>
+
+              {csvPreview.errors.length > 0 && (
+                <div style={{
+                  padding: "12px 16px", marginBottom: "16px",
+                  background: "#fef2f2", border: "1px solid #fca5a5",
+                  borderRadius: "8px", maxHeight: "200px", overflowY: "auto",
+                }}>
+                  <div style={{ fontSize: "13px", fontWeight: "700", color: "#dc2626", marginBottom: "8px" }}>
+                    {csvPreview.errors.length}件のエラーがあります。修正してから再度アップロードしてください。
+                  </div>
+                  {csvPreview.errors.map((err, i) => (
+                    <div key={i} style={{ fontSize: "13px", color: "#dc2626", padding: "2px 0" }}>
+                      {err.row}行目：{err.message}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {csvPreview.errors.length === 0 && (
+                <div style={{
+                  padding: "12px 16px", marginBottom: "16px",
+                  background: "#f0fdf4", border: "1px solid #86efac",
+                  borderRadius: "8px", fontSize: "13px", color: "#166534",
+                }}>
+                  エラーはありません。インポートを実行できます。
+                </div>
+              )}
+
+              {/* データプレビューテーブル */}
+              <div style={{ overflowX: "auto", marginBottom: "16px", maxHeight: "300px", overflowY: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "2px solid var(--color-border)" }}>
+                      <th style={{ ...thStyle, fontSize: "11px" }}>行</th>
+                      <th style={{ ...thStyle, fontSize: "11px" }}>顧客名</th>
+                      <th style={{ ...thStyle, fontSize: "11px" }}>カナ</th>
+                      <th style={{ ...thStyle, fontSize: "11px" }}>メール</th>
+                      <th style={{ ...thStyle, fontSize: "11px" }}>電話番号</th>
+                      <th style={{ ...thStyle, fontSize: "11px" }}>支払条件</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csvPreview.rawRows.slice(0, 20).map((row, i) => {
+                      const rowNum = i + 2;
+                      const hasError = csvPreview.errors.some((e) => e.row === rowNum);
+                      return (
+                        <tr key={i} style={{
+                          borderBottom: "1px solid var(--color-border)",
+                          background: hasError ? "#fef2f2" : "transparent",
+                        }}>
+                          <td style={{ ...tdStyle, fontSize: "12px", color: hasError ? "#dc2626" : "var(--color-text-secondary)" }}>{rowNum}</td>
+                          <td style={{ ...tdStyle, fontSize: "12px" }}>{getCol(row, "顧客名") ?? ""}</td>
+                          <td style={{ ...tdStyle, fontSize: "12px" }}>{getCol(row, "カナ", "顧客名カナ", "フリガナ") ?? ""}</td>
+                          <td style={{ ...tdStyle, fontSize: "12px" }}>{getCol(row, "メール", "メールアドレス", "email") ?? ""}</td>
+                          <td style={{ ...tdStyle, fontSize: "12px" }}>{getCol(row, "電話番号", "電話", "TEL") ?? ""}</td>
+                          <td style={{ ...tdStyle, fontSize: "12px" }}>{getCol(row, "支払条件") ?? ""}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {csvPreview.rawRows.length > 20 && (
+                  <div style={{ fontSize: "12px", color: "var(--color-text-secondary)", padding: "8px 16px" }}>
+                    ...他 {csvPreview.rawRows.length - 20}行
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  onClick={handleCsvImport}
+                  disabled={csvPreview.errors.length > 0 || saving}
+                  style={{
+                    padding: "8px 20px", borderRadius: "var(--radius-button)",
+                    border: "none",
+                    background: csvPreview.errors.length > 0 ? "#d1d5db" : "var(--color-primary)",
+                    color: "white", fontSize: "13px", fontWeight: "600",
+                    cursor: csvPreview.errors.length > 0 || saving ? "not-allowed" : "pointer",
+                    opacity: csvPreview.errors.length > 0 ? 0.6 : 1,
+                    fontFamily: "var(--font-sans)",
+                  }}>
+                  {saving ? "インポート中..." : "インポート実行"}
+                </button>
+              </div>
+            </div>
           )}
 
           {/* 新規追加フォーム */}

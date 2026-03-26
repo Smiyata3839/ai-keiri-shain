@@ -456,10 +456,10 @@ export default function InvoiceDetailPage() {
                       borderBottom: "1px solid var(--color-text)",
                     }}
                   >
+                    <th style={{ ...previewThStyle, width: "90px" }}>日付</th>
                     <th style={previewThStyle}>品目</th>
                     <th style={{ ...previewThStyle, width: "60px", textAlign: "right" }}>数量</th>
                     <th style={{ ...previewThStyle, width: "100px", textAlign: "right" }}>単価</th>
-                    <th style={{ ...previewThStyle, width: "60px", textAlign: "right" }}>税率</th>
                     <th style={{ ...previewThStyle, width: "120px", textAlign: "right" }}>金額</th>
                   </tr>
                 </thead>
@@ -471,15 +471,13 @@ export default function InvoiceDetailPage() {
                         borderBottom: "1px solid var(--color-border)",
                       }}
                     >
+                      <td style={previewTdStyle}>{invoice.issue_date}</td>
                       <td style={previewTdStyle}>{item.description}</td>
                       <td style={{ ...previewTdStyle, textAlign: "right" }}>
                         {item.quantity.toLocaleString()}
                       </td>
                       <td style={{ ...previewTdStyle, textAlign: "right" }}>
                         {item.unit_price.toLocaleString()}円
-                      </td>
-                      <td style={{ ...previewTdStyle, textAlign: "right" }}>
-                        {item.tax_rate}%
                       </td>
                       <td
                         style={{

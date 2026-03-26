@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
+import { validateCsvFile, validateBankTransactions } from "@/lib/validation";
 
 type BankTransaction = {
   id: string;
@@ -39,6 +40,8 @@ export default function BankPage() {
   const [bankInfo, setBankInfo] = useState<{name: string, branch: string} | null>(null);
   const [activeFilter, setActiveFilter] = useState<"all" | "matched" | "unmatched">("all");
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [importWarning, setImportWarning] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -87,11 +90,21 @@ export default function BankPage() {
   };
 
   async function handleCSV(e: React.ChangeEvent<HTMLInputElement>) {
-    console.log("handleCSV called");
     const file = e.target.files?.[0];
     if (!file || !companyId) return;
+
+    // ファイル形式チェック
+    const fileErr = validateCsvFile(file);
+    if (fileErr) {
+      setImportError(fileErr);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setImporting(true);
     setImportResult(null);
+    setImportWarning(null);
+    setImportError(null);
 
     const buffer = await file.arrayBuffer();
     const decoder = new TextDecoder("utf-8");
@@ -163,6 +176,18 @@ export default function BankPage() {
       transactions.push({ transaction_date, description, amount, balance });
     }
 
+    // バリデーション
+    const { errors: txErrors, warnings: txWarnings } = validateBankTransactions(transactions);
+    if (txErrors.length > 0) {
+      setImportError(txErrors.join("、"));
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    if (txWarnings.length > 0) {
+      setImportWarning(txWarnings.join("、"));
+    }
+
     // APIルートに送信（supabaseAdminでDB操作）
     const res = await fetch("/api/bank", {
       method: "POST",
@@ -218,9 +243,19 @@ export default function BankPage() {
                 🏦 対象口座：{bankInfo.name} {bankInfo.branch}　フォーマット：自動判定済み
               </span>
             )}
+            {importError && (
+              <span style={{ fontSize: 13, color: "#dc2626", fontWeight: 500, backgroundColor: "#fef2f2", padding: "8px 14px", borderRadius: 980, border: "1px solid #fca5a5" }}>
+                {importError}
+              </span>
+            )}
+            {importWarning && (
+              <span style={{ fontSize: 13, color: "#bf5700", fontWeight: 500, backgroundColor: "#fff3e0", padding: "8px 14px", borderRadius: 980, border: "1px solid #bf5700" }}>
+                {importWarning}
+              </span>
+            )}
             {importResult && (
               <span style={{ fontSize: 13, color: "#1a7f37", fontWeight: 500, backgroundColor: "#e6f4ea", padding: "8px 14px", borderRadius: 980, border: "1px solid #1a7f37" }}>
-                ✅ {importResult}
+                {importResult}
               </span>
             )}
             <input ref={fileInputRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleCSV} />

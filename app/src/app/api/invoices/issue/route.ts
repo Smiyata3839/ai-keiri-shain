@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { required } from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
   const serverSupabase = await createClient();
@@ -13,6 +14,12 @@ export async function POST(req: NextRequest) {
     invoiceId: string;
     companyId: string;
   };
+
+  // 入力値バリデーション
+  const invoiceIdErr = required(invoiceId, "請求書ID");
+  if (invoiceIdErr) return NextResponse.json({ error: invoiceIdErr }, { status: 400 });
+  const companyIdErr = required(companyId, "会社ID");
+  if (companyIdErr) return NextResponse.json({ error: companyIdErr }, { status: 400 });
 
   // companyIdが該当ユーザーのものか確認
   const { data: company } = await supabaseAdmin

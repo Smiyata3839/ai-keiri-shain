@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { required, validateBankTransactions } from "@/lib/validation";
 
 type TransactionRow = {
   transaction_date: string;
@@ -77,6 +78,19 @@ export async function POST(req: NextRequest) {
     transactions: TransactionRow[];
     format: string;
   };
+
+  // 入力値バリデーション
+  const companyIdErr = required(companyId, "会社ID");
+  if (companyIdErr) return NextResponse.json({ error: companyIdErr }, { status: 400 });
+
+  if (!Array.isArray(transactions)) {
+    return NextResponse.json({ error: "明細データが不正です" }, { status: 400 });
+  }
+
+  const { errors: txErrors } = validateBankTransactions(transactions);
+  if (txErrors.length > 0) {
+    return NextResponse.json({ error: txErrors.join("、") }, { status: 400 });
+  }
 
   // companyIdが該当ユーザーのものか確認
   const { data: company } = await supabaseAdmin

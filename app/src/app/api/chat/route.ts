@@ -292,6 +292,11 @@ export async function POST(req: NextRequest) {
 
     const { messages, companyId } = await req.json();
 
+    // 入力値バリデーション
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ content: "メッセージが空です。" }, { status: 400 });
+    }
+
     // companyIdの所有権を検証
     if (companyId) {
       const { data: company } = await supabaseAdmin

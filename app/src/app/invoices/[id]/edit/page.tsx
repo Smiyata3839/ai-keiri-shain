@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
+import { validateInvoice, nonNegativeInteger, positiveInteger } from "@/lib/validation";
 
 type Customer = { id: string; name: string; payment_terms: string | null };
 type Company = { id: string; name: string; invoice_registration_number: string };
@@ -155,7 +156,16 @@ export default function InvoiceEditPage() {
   const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
     setItems((prev) => {
       const next = [...prev];
-      const updated = { ...next[index], [field]: value };
+      let sanitized = value;
+      if (field === "quantity") {
+        const n = Number(value);
+        sanitized = (!Number.isFinite(n) || n < 1) ? 1 : Math.floor(n);
+      }
+      if (field === "unit_price") {
+        const n = Number(value);
+        sanitized = (!Number.isFinite(n) || n < 0) ? 0 : Math.floor(n);
+      }
+      const updated = { ...next[index], [field]: sanitized };
       next[index] = recalcItem(updated);
       return next;
     });
@@ -171,10 +181,21 @@ export default function InvoiceEditPage() {
 
   const handleSave = async (isPublish: boolean) => {
     setError("");
-    if (!customerId) { setError("顧客を選択してください"); return; }
-    if (!dueDate) { setError("支払期限を入力してください"); return; }
-    if (items.some((it) => !it.description)) { setError("品目を入力してください"); return; }
     if (!company) { setError("自社情報が登録されていません"); return; }
+
+    const validationErr = validateInvoice({
+      customerId,
+      issueDate,
+      dueDate,
+      items: items.map((it) => ({
+        description: it.description,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        tax_rate: it.tax_rate,
+      })),
+      total,
+    });
+    if (validationErr) { setError(validationErr); return; }
 
     setSaving(true);
     try {
