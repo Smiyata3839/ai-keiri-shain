@@ -18,7 +18,9 @@
       "Bash(ls -la /c/Users/smiya/ai-keiri-shain/app/*.html)",
       "Bash(find /c/Users/smiya/ai-keiri-shain/app/node_modules/next/dist/docs -type f -name *.md)",
       "Bash(while read:*)",
-      "Bash(do sed:*)"
+      "Bash(do sed:*)",
+      "Bash(code:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
