@@ -241,7 +241,7 @@ export function Sidebar({ className }: { className?: string }) {
           {/* 右側にベル・設定を縦並び */}
           <div style={{
             position: "absolute",
-            right: "-12px",
+            right: "-32px",
             top: "50%",
             transform: "translateY(-50%)",
             display: "flex",
