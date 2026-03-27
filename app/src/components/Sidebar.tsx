@@ -19,8 +19,17 @@ import {
   Building2,
   LogOut,
   Camera,
+  Bell,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+
+type Notification = {
+  id: string;
+  title: string;
+  body: string;
+  created_at: string;
+};
 
 type MenuItem = {
   icon: LucideIcon;
@@ -82,9 +91,15 @@ export function Sidebar({ className }: { className?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [showPanel, setShowPanel] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
 
   useEffect(() => {
-    const loadLogo = async () => {
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: company } = await supabase
@@ -93,9 +108,31 @@ export function Sidebar({ className }: { className?: string }) {
         setCompanyId(company.id);
         if (company.logo_url) setLogoUrl(company.logo_url);
       }
+      const { data: notifs } = await supabase
+        .from("notifications")
+        .select("id, title, body, created_at")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (notifs) setNotifications(notifs);
     };
-    loadLogo();
+    init();
   }, []);
+
+  // パネル外クリックで閉じる
+  useEffect(() => {
+    if (!showPanel) return;
+    const handler = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setShowPanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showPanel]);
+
+  const markAsRead = (id: string) => {
+    setReadIds((prev) => new Set(prev).add(id));
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,10 +235,130 @@ export function Sidebar({ className }: { className?: string }) {
             onChange={handleImageUpload}
           />
         </div>
-        <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
-          AI経理社員
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
+            AI経理社員
+          </span>
+          <div
+            style={{ position: "relative", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); setShowPanel((v) => !v); }}
+          >
+            <Bell size={18} color="rgba(255,255,255,0.55)" />
+            {unreadCount > 0 && (
+              <div style={{
+                position: "absolute",
+                top: "-6px",
+                right: "-8px",
+                minWidth: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                background: "#dc2626",
+                color: "white",
+                fontSize: "11px",
+                fontWeight: "700",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 4px",
+              }}>
+                {unreadCount}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* 通知パネル */}
+      {showPanel && (
+        <div
+          ref={panelRef}
+          style={{
+            position: "fixed",
+            left: "360px",
+            top: 0,
+            width: "320px",
+            height: "100vh",
+            background: "#1e293b",
+            borderLeft: "1px solid rgba(255,255,255,0.1)",
+            zIndex: 100,
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "4px 0 24px rgba(0,0,0,0.3)",
+          }}
+        >
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "20px",
+            borderBottom: "1px solid rgba(255,255,255,0.1)",
+          }}>
+            <span style={{ fontSize: "16px", fontWeight: "700", color: "white" }}>通知</span>
+            <X
+              size={18}
+              color="rgba(255,255,255,0.5)"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowPanel(false)}
+            />
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+            {notifications.length === 0 ? (
+              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px", textAlign: "center", marginTop: "40px" }}>
+                通知はありません
+              </p>
+            ) : (
+              notifications.map((n) => {
+                const isRead = readIds.has(n.id);
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => markAsRead(n.id)}
+                    style={{
+                      padding: "14px",
+                      borderRadius: "8px",
+                      marginBottom: "8px",
+                      cursor: "pointer",
+                      background: isRead ? "transparent" : "rgba(0,212,255,0.08)",
+                      border: isRead ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,212,255,0.2)",
+                      transition: "background 0.15s",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: isRead ? "400" : "600",
+                        color: isRead ? "rgba(255,255,255,0.5)" : "white",
+                      }}>
+                        {n.title}
+                      </span>
+                      {!isRead && (
+                        <div style={{
+                          width: "8px",
+                          height: "8px",
+                          borderRadius: "50%",
+                          background: "#00D4FF",
+                          flexShrink: 0,
+                        }} />
+                      )}
+                    </div>
+                    <p style={{
+                      fontSize: "13px",
+                      color: isRead ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.6)",
+                      margin: "0 0 6px 0",
+                      lineHeight: "1.5",
+                    }}>
+                      {n.body}
+                    </p>
+                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)" }}>
+                      {new Date(n.created_at).toLocaleString("ja-JP")}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       {/* メニュー */}
       <nav style={{ flex: 1, padding: "var(--space-4) var(--space-3)" }}>
