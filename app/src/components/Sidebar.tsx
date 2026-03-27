@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import {
   MessageSquare,
+  LayoutDashboard,
   FilePlus,
   FileText,
   Wallet,
@@ -35,6 +36,7 @@ const menuGroups: MenuGroup[] = [
     label: "メイン",
     items: [
       { icon: MessageSquare, label: "チャット", path: "/chat" },
+      { icon: LayoutDashboard, label: "ダッシュボード", path: "/dashboard" },
     ],
   },
   {
