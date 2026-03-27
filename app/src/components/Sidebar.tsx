@@ -21,6 +21,7 @@ import {
   Camera,
   Bell,
   X,
+  Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -172,40 +173,40 @@ export function Sidebar({ className }: { className?: string }) {
         overflowY: "auto",
       }}
     >
-      {/* キャラクターロゴ */}
+      {/* キャラクターロゴ + アクションアイコン */}
       <div
         style={{
           padding: "var(--space-6) var(--space-6) var(--space-4)",
           borderBottom: "1px solid var(--color-sidebar-border)",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          gap: "var(--space-2)",
+          gap: "16px",
         }}
       >
+        {/* アバター */}
         <div
-          style={{ position: "relative", cursor: "pointer" }}
+          style={{ position: "relative", cursor: "pointer", flexShrink: 0 }}
           onClick={() => fileInputRef.current?.click()}
         >
           {logoUrl ? (
             <img
               src={logoUrl}
               alt="ロゴ"
-              width={120}
-              height={120}
+              width={80}
+              height={80}
               style={{
                 borderRadius: "50%",
                 objectFit: "cover",
-                width: "120px",
-                height: "120px",
+                width: "80px",
+                height: "80px",
               }}
             />
           ) : (
             <Image
               src="/ai-accountant.png"
               alt="AI経理社員"
-              width={120}
-              height={120}
+              width={80}
+              height={80}
               style={{
                 borderRadius: "50%",
                 objectFit: "cover",
@@ -215,17 +216,17 @@ export function Sidebar({ className }: { className?: string }) {
           )}
           <div style={{
             position: "absolute",
-            bottom: "4px",
-            right: "4px",
-            width: "28px",
-            height: "28px",
+            bottom: "2px",
+            right: "2px",
+            width: "24px",
+            height: "24px",
             borderRadius: "50%",
             background: "rgba(0,0,0,0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}>
-            <Camera size={14} color="white" />
+            <Camera size={12} color="white" />
           </div>
           <input
             ref={fileInputRef}
@@ -235,35 +236,49 @@ export function Sidebar({ className }: { className?: string }) {
             onChange={handleImageUpload}
           />
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
+        {/* 名前 + アクションアイコン */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
             AI経理社員
           </span>
-          <div
-            style={{ position: "relative", cursor: "pointer" }}
-            onClick={(e) => { e.stopPropagation(); setShowPanel((v) => !v); }}
-          >
-            <Bell size={18} color="rgba(255,255,255,0.55)" />
-            {unreadCount > 0 && (
-              <div style={{
-                position: "absolute",
-                top: "-6px",
-                right: "-8px",
-                minWidth: "18px",
-                height: "18px",
-                borderRadius: "50%",
-                background: "#dc2626",
-                color: "white",
-                fontSize: "11px",
-                fontWeight: "700",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "0 4px",
-              }}>
-                {unreadCount}
-              </div>
-            )}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* ベル通知 */}
+            <div
+              style={{ position: "relative", cursor: "pointer" }}
+              onClick={(e) => { e.stopPropagation(); setShowPanel((v) => !v); }}
+            >
+              <Bell size={20} color="rgba(255,255,255,0.55)" />
+              {unreadCount > 0 && (
+                <div style={{
+                  position: "absolute",
+                  top: "-6px",
+                  right: "-8px",
+                  minWidth: "18px",
+                  height: "18px",
+                  borderRadius: "50%",
+                  background: "#dc2626",
+                  color: "white",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px",
+                }}>
+                  {unreadCount}
+                </div>
+              )}
+            </div>
+            {/* 設定 */}
+            <div
+              style={{ cursor: "pointer" }}
+              onClick={() => router.push("/company")}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = ""}
+            >
+              <Settings size={20} color="rgba(255,255,255,0.55)" />
+            </div>
           </div>
         </div>
       </div>
