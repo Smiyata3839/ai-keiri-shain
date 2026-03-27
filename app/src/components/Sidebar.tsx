@@ -11,6 +11,7 @@ import {
   Wallet,
   Landmark,
   BookOpen,
+  Book,
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -64,7 +65,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { icon: Landmark, label: "銀行明細取込", path: "/bank" },
       { icon: BookOpen, label: "仕訳一覧", path: "/journals" },
-      { icon: BookOpen, label: "総勘定元帳", path: "/general-ledger" },
+      { icon: Book, label: "総勘定元帳", path: "/general-ledger" },
       { icon: BarChart3, label: "残高試算表", path: "/trial-balance" },
       { icon: TrendingUp, label: "貸借対照表", path: "/balance-sheet" },
       { icon: TrendingDown, label: "損益計算書", path: "/profit-loss" },
@@ -205,8 +206,8 @@ export function Sidebar({ className }: { className?: string }) {
               />
             ) : (
               <Image
-                src="/ai-accountant.png"
-                alt="AI経理社員"
+                src="/logo.png"
+                alt="KANBEI"
                 width={120}
                 height={120}
                 style={{
@@ -285,7 +286,7 @@ export function Sidebar({ className }: { className?: string }) {
           </div>
         </div>
         <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
-          AI経理社員
+          KANBEI
         </span>
       </div>
 

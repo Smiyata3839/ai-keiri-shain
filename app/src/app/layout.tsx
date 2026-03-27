@@ -3,8 +3,11 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI経理社員",
+  title: "KANBEI",
   description: "中小企業向けAI搭載クラウド経理SaaS",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

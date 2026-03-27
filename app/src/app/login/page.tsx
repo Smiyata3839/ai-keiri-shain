@@ -54,17 +54,11 @@ export default function LoginPage() {
         boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
       }}>
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <div style={{
-            width: "52px", height: "52px",
-            background: "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)",
-            borderRadius: "14px",
-            margin: "0 auto 18px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Briefcase size={26} color="white" />
+          <div style={{ margin: "0 auto 18px", width: "64px", height: "64px" }}>
+            <img src="/logo.png" style={{ width: "64px", height: "64px", borderRadius: "8px", objectFit: "contain" }} alt="KANBEI" />
           </div>
           <h1 style={{ fontSize: "26px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
-            AI経理社員
+            KANBEI
           </h1>
           <p style={{ color: "var(--color-text-secondary)", marginTop: "8px", fontSize: "15px" }}>
             ログインしてください

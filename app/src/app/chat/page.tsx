@@ -14,7 +14,7 @@ const STORAGE_KEY = "ai-keiri-chat-messages";
 
 const INITIAL_MESSAGE: Message = {
   role: "assistant",
-  content: "おはようございます！AI経理社員です。今日もサポートします。何かお手伝いできることはありますか？",
+  content: "おはようございます！KANBEIです。今日もサポートします。何かお手伝いできることはありますか？",
 };
 
 const loadMessages = (): Message[] => {
@@ -116,7 +116,7 @@ export default function ChatPage() {
           <p style={{
             margin: "2px 0 0", fontSize: "12px",
             color: "var(--color-text-muted)",
-          }}>AI経理社員</p>
+          }}>KANBEI</p>
         </div>
 
         {/* メッセージ一覧 */}
@@ -136,7 +136,7 @@ export default function ChatPage() {
                   paddingLeft: msg.role === "assistant" ? "var(--space-1)" : "0",
                   paddingRight: msg.role === "user" ? "var(--space-1)" : "0",
                 }}>
-                  {msg.role === "assistant" ? "AI経理社員" : "あなた"}
+                  {msg.role === "assistant" ? "KANBEI" : "あなた"}
                 </div>
                 <div style={{
                   padding: "var(--space-3) var(--space-4)",
