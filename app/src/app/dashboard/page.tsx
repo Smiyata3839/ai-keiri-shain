@@ -18,16 +18,22 @@ const EXPENSE_ACCOUNTS = [
 type RevenueMonth = { month: string; paid: number; overdue: number };
 type ProfitMonth = { month: string; profit: number };
 
-function getFiscalStartYear(today: Date, fiscalStartMonth: number) {
-  const y = today.getFullYear();
-  const m = today.getMonth() + 1;
-  return m >= fiscalStartMonth ? y : y - 1;
+/** 決算月(fiscal_month=3なら3月決算)から開始月を返す */
+function getStartMonth(fiscalMonth: number) {
+  return (fiscalMonth % 12) + 1; // 3→4, 12→1, 9→10
 }
 
-function getFiscalMonths(startYear: number, fiscalStartMonth: number): { label: string; start: string; end: string }[] {
+/** 今日の日付から現在の年度の開始年を返す */
+function getCurrentFiscalStartYear(today: Date, startMonth: number) {
+  const y = today.getFullYear();
+  const m = today.getMonth() + 1;
+  return m >= startMonth ? y : y - 1;
+}
+
+function getFiscalMonths(startYear: number, startMonth: number): { label: string; start: string; end: string }[] {
   const months: { label: string; start: string; end: string }[] = [];
   for (let i = 0; i < 12; i++) {
-    let m = fiscalStartMonth + i;
+    let m = startMonth + i;
     let y = startYear;
     if (m > 12) { m -= 12; y += 1; }
     const mm = String(m).padStart(2, "0");
@@ -45,110 +51,90 @@ const fmt = (n: number) => "¥" + Math.abs(n).toLocaleString("ja-JP");
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [startMonth, setStartMonth] = useState(4);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [revenueData, setRevenueData] = useState<RevenueMonth[]>([]);
   const [profitData, setProfitData] = useState<ProfitMonth[]>([]);
-  const [nextRevenueData, setNextRevenueData] = useState<RevenueMonth[]>([]);
-  const [nextProfitData, setNextProfitData] = useState<ProfitMonth[]>([]);
   const [loading, setLoading] = useState(true);
-  const [fiscalLabel, setFiscalLabel] = useState("");
-  const [nextFiscalLabel, setNextFiscalLabel] = useState("");
   const router = useRouter();
   const supabase = createClient();
 
+  // 年度選択肢（現在年度を中心に前後3年）
+  const yearOptions = useMemo(() => {
+    if (!selectedYear) return [];
+    const opts: number[] = [];
+    for (let y = selectedYear - 3; y <= selectedYear + 1; y++) opts.push(y);
+    return opts;
+  }, [selectedYear]);
+
   useEffect(() => {
-    const getUser = async () => {
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) router.push("/login");
-      else setUser(user);
+      if (!user) { router.push("/login"); return; }
+      setUser(user);
+
+      const { data: company } = await supabase
+        .from("companies").select("id, fiscal_month").eq("user_id", user.id).single();
+      if (!company) { setLoading(false); return; }
+
+      const sm = getStartMonth(company.fiscal_month || 3);
+      setStartMonth(sm);
+      setCompanyId(company.id);
+
+      const currentFY = getCurrentFiscalStartYear(new Date(), sm);
+      setSelectedYear(currentFY);
     };
-    getUser();
+    init();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    loadData();
-  }, [user]);
+    if (!companyId || !selectedYear) return;
+    loadData(companyId, selectedYear, startMonth);
+  }, [companyId, selectedYear, startMonth]);
 
-  async function loadData() {
+  async function loadData(cid: string, year: number, sm: number) {
     setLoading(true);
-
-    const { data: company } = await supabase
-      .from("companies").select("id, fiscal_month").eq("user_id", user.id).single();
-    if (!company) { setLoading(false); return; }
-
-    const fm = company.fiscal_month || 4;
-    const today = new Date();
-    const startYear = getFiscalStartYear(today, fm);
-    const months = getFiscalMonths(startYear, fm);
-    const nextStartYear = startYear + 1;
-    const nextMonths = getFiscalMonths(nextStartYear, fm);
-
+    const months = getFiscalMonths(year, sm);
     const fyStart = months[0].start;
     const fyEnd = months[11].end;
-    const nextFyEnd = nextMonths[11].end;
-    setFiscalLabel(`${startYear}年度（${startYear}/${fm}月〜${months[11].end.slice(0, 4)}/${months[11].end.slice(5, 7)}月）`);
 
-    const [invoiceResult, journalResult, nextInvoiceResult, nextJournalResult] = await Promise.all([
+    const [invoiceResult, journalResult] = await Promise.all([
       supabase
         .from("invoices")
         .select("issue_date, total, status")
-        .eq("company_id", company.id)
+        .eq("company_id", cid)
         .in("status", ["paid", "overdue", "sent", "partial"])
         .gte("issue_date", fyStart)
         .lte("issue_date", fyEnd),
       supabase
         .from("journals")
         .select("journal_date, debit_account, credit_account, amount")
-        .eq("company_id", company.id)
+        .eq("company_id", cid)
         .gte("journal_date", fyStart)
         .lte("journal_date", fyEnd),
-      supabase
-        .from("invoices")
-        .select("issue_date, total, status")
-        .eq("company_id", company.id)
-        .in("status", ["paid", "overdue", "sent", "partial"])
-        .gte("issue_date", nextMonths[0].start)
-        .lte("issue_date", nextFyEnd),
-      supabase
-        .from("journals")
-        .select("journal_date, debit_account, credit_account, amount")
-        .eq("company_id", company.id)
-        .gte("journal_date", nextMonths[0].start)
-        .lte("journal_date", nextFyEnd),
     ]);
 
     const invoices = invoiceResult.data ?? [];
     const journals = journalResult.data ?? [];
-    const nextInvoices = nextInvoiceResult.data ?? [];
-    const nextJournals = nextJournalResult.data ?? [];
 
-    function buildRevenueData(ms: typeof months, invs: typeof invoices): RevenueMonth[] {
-      return ms.map((m) => {
-        const mi = invs.filter((inv) => inv.issue_date >= m.start && inv.issue_date <= m.end);
-        const paid = mi.filter((inv) => inv.status === "paid").reduce((s, inv) => s + (inv.total ?? 0), 0);
-        const overdue = mi.filter((inv) => inv.status !== "paid").reduce((s, inv) => s + (inv.total ?? 0), 0);
-        return { month: m.label, paid, overdue };
-      });
-    }
+    setRevenueData(months.map((m) => {
+      const mi = invoices.filter((inv) => inv.issue_date >= m.start && inv.issue_date <= m.end);
+      const paid = mi.filter((inv) => inv.status === "paid").reduce((s, inv) => s + (inv.total ?? 0), 0);
+      const overdue = mi.filter((inv) => inv.status !== "paid").reduce((s, inv) => s + (inv.total ?? 0), 0);
+      return { month: m.label, paid, overdue };
+    }));
 
-    function buildProfitData(ms: typeof months, jrnls: typeof journals): ProfitMonth[] {
-      return ms.map((m) => {
-        const mj = jrnls.filter((j) => j.journal_date >= m.start && j.journal_date <= m.end);
-        let revenue = 0;
-        let expense = 0;
-        for (const j of mj) {
-          if (REVENUE_ACCOUNTS.includes(j.credit_account)) revenue += j.amount;
-          if (EXPENSE_ACCOUNTS.includes(j.debit_account)) expense += j.amount;
-        }
-        return { month: m.label, profit: revenue - expense };
-      });
-    }
-
-    setRevenueData(buildRevenueData(months, invoices));
-    setProfitData(buildProfitData(months, journals));
-    setNextRevenueData(buildRevenueData(nextMonths, nextInvoices));
-    setNextProfitData(buildProfitData(nextMonths, nextJournals));
-    setNextFiscalLabel(`${nextStartYear}年度（${nextStartYear}/${fm}月〜${nextMonths[11].end.slice(0, 4)}/${nextMonths[11].end.slice(5, 7)}月）`);
+    setProfitData(months.map((m) => {
+      const mj = journals.filter((j) => j.journal_date >= m.start && j.journal_date <= m.end);
+      let revenue = 0;
+      let expense = 0;
+      for (const j of mj) {
+        if (REVENUE_ACCOUNTS.includes(j.credit_account)) revenue += j.amount;
+        if (EXPENSE_ACCOUNTS.includes(j.debit_account)) expense += j.amount;
+      }
+      return { month: m.label, profit: revenue - expense };
+    }));
 
     setLoading(false);
   }
@@ -158,12 +144,6 @@ export default function DashboardPage() {
   );
   const totalProfit = useMemo(
     () => profitData.reduce((s, d) => s + d.profit, 0), [profitData]
-  );
-  const nextTotalRevenue = useMemo(
-    () => nextRevenueData.reduce((s, d) => s + d.paid + d.overdue, 0), [nextRevenueData]
-  );
-  const nextTotalProfit = useMemo(
-    () => nextProfitData.reduce((s, d) => s + d.profit, 0), [nextProfitData]
   );
 
   if (!user) return null;
@@ -180,121 +160,106 @@ export default function DashboardPage() {
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
       <Sidebar />
       <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", padding: "40px" }}>
-        <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)", marginBottom: "8px" }}>
-          ダッシュボード
-        </h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
+            ダッシュボード
+          </h2>
+          {selectedYear && (
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              style={{
+                fontSize: "15px",
+                fontWeight: "600",
+                color: "var(--color-text)",
+                background: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "8px",
+                padding: "8px 14px",
+                cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>{y}年度</option>
+              ))}
+            </select>
+          )}
+        </div>
         <p style={{ color: "var(--color-text-secondary)", marginBottom: "36px", fontSize: "15px" }}>
           {user.email} でログイン中
+          {selectedYear && !loading && (
+            <span style={{ marginLeft: "16px", color: "var(--color-text-secondary)" }}>
+              ｜ 起算日: {selectedYear}/{String(startMonth).padStart(2, "0")}/01 ～ 決算日: {getFiscalMonths(selectedYear, startMonth)[11].end}
+            </span>
+          )}
         </p>
 
         {loading ? (
           <p style={{ color: "var(--color-text-secondary)" }}>読み込み中...</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
-            {/* 今年度 */}
-            <FiscalYearSection
-              label={fiscalLabel}
-              revenueData={revenueData}
-              profitData={profitData}
-              totalRevenue={totalRevenue}
-              totalProfit={totalProfit}
-              gradientId="current"
-              cardStyle={cardStyle}
-            />
+          <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+            {/* 売上高グラフ */}
+            <div style={cardStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
+                  売上高
+                </h3>
+                <span style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)" }}>
+                  {fmt(totalRevenue)}
+                </span>
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={revenueData} layout="vertical" margin={{ left: 10, right: 20 }}>
+                  <XAxis type="number" tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
+                  <YAxis type="category" dataKey="month" width={40} stroke="var(--color-text-secondary)" fontSize={12} />
+                  <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+                  <Legend />
+                  <Bar dataKey="paid" name="回収済み" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="overdue" name="未回収" stackId="a" fill="#f87171" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
 
-            {/* 翌年度 */}
-            <FiscalYearSection
-              label={nextFiscalLabel}
-              revenueData={nextRevenueData}
-              profitData={nextProfitData}
-              totalRevenue={nextTotalRevenue}
-              totalProfit={nextTotalProfit}
-              gradientId="next"
-              cardStyle={cardStyle}
-            />
+            {/* 純利益グラフ */}
+            <div style={cardStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
+                  純利益
+                </h3>
+                <span style={{
+                  fontSize: "28px", fontWeight: "700",
+                  color: totalProfit >= 0 ? "#16a34a" : "#dc2626",
+                }}>
+                  {totalProfit < 0 ? "-" : ""}{fmt(totalProfit)}
+                </span>
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart data={profitData} margin={{ left: 10, right: 20 }}>
+                  <defs>
+                    <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4ade80" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#4ade80" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="month" stroke="var(--color-text-secondary)" fontSize={12} />
+                  <YAxis tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
+                  <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
+                  <ReferenceLine y={0} stroke="var(--color-text-secondary)" strokeDasharray="3 3" />
+                  <Area
+                    type="monotone"
+                    dataKey="profit"
+                    name="純利益"
+                    stroke="#4ade80"
+                    fill="url(#profitGrad)"
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function FiscalYearSection({
-  label, revenueData, profitData, totalRevenue, totalProfit, gradientId, cardStyle,
-}: {
-  label: string;
-  revenueData: RevenueMonth[];
-  profitData: ProfitMonth[];
-  totalRevenue: number;
-  totalProfit: number;
-  gradientId: string;
-  cardStyle: React.CSSProperties;
-}) {
-  return (
-    <div>
-      <h3 style={{ fontSize: "20px", fontWeight: "700", color: "var(--color-text)", marginBottom: "16px" }}>
-        {label}
-      </h3>
-      <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-        {/* 売上高グラフ */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
-            <h4 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
-              売上高
-            </h4>
-            <span style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)" }}>
-              {fmt(totalRevenue)}
-            </span>
-          </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={revenueData} layout="vertical" margin={{ left: 10, right: 20 }}>
-              <XAxis type="number" tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
-              <YAxis type="category" dataKey="month" width={40} stroke="var(--color-text-secondary)" fontSize={12} />
-              <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-              <Legend />
-              <Bar dataKey="paid" name="回収済み" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="overdue" name="未回収" stackId="a" fill="#f87171" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* 純利益グラフ */}
-        <div style={cardStyle}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
-            <h4 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
-              純利益
-            </h4>
-            <span style={{
-              fontSize: "28px", fontWeight: "700",
-              color: totalProfit >= 0 ? "#16a34a" : "#dc2626",
-            }}>
-              {totalProfit < 0 ? "-" : ""}{fmt(totalProfit)}
-            </span>
-          </div>
-          <ResponsiveContainer width="100%" height={280}>
-            <AreaChart data={profitData} margin={{ left: 10, right: 20 }}>
-              <defs>
-                <linearGradient id={`${gradientId}Positive`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4ade80" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#4ade80" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="month" stroke="var(--color-text-secondary)" fontSize={12} />
-              <YAxis tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
-              <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-              <ReferenceLine y={0} stroke="var(--color-text-secondary)" strokeDasharray="3 3" />
-              <Area
-                type="monotone"
-                dataKey="profit"
-                name="純利益"
-                stroke="#4ade80"
-                fill={`url(#${gradientId}Positive)`}
-                strokeWidth={2}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
       </div>
     </div>
   );
