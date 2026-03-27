@@ -35,6 +35,9 @@ export default function InvoiceListPage() {
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchNumber, setSearchNumber] = useState("");
+  const [searchCustomer, setSearchCustomer] = useState("");
+  const [searchMonth, setSearchMonth] = useState("");
   const [csvPreview, setCsvPreview] = useState<{ file: File; rows: Record<string, string>[]; errors: InvoiceCsvRowError[] } | null>(null);
 
   useEffect(() => {
@@ -355,6 +358,62 @@ export default function InvoiceListPage() {
             </div>
           )}
 
+          {/* 検索フィルター */}
+          {!loading && invoices.length > 0 && (
+            <div style={{
+              display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap",
+            }}>
+              <input
+                type="text"
+                placeholder="請求書番号で検索"
+                value={searchNumber}
+                onChange={(e) => setSearchNumber(e.target.value)}
+                style={{
+                  padding: "8px 14px", borderRadius: "var(--radius-button)",
+                  border: "1px solid var(--color-border)", background: "var(--color-card)",
+                  color: "var(--color-text)", fontSize: "13px", fontFamily: "var(--font-sans)",
+                  width: "180px", outline: "none",
+                }}
+              />
+              <input
+                type="text"
+                placeholder="顧客名で検索"
+                value={searchCustomer}
+                onChange={(e) => setSearchCustomer(e.target.value)}
+                style={{
+                  padding: "8px 14px", borderRadius: "var(--radius-button)",
+                  border: "1px solid var(--color-border)", background: "var(--color-card)",
+                  color: "var(--color-text)", fontSize: "13px", fontFamily: "var(--font-sans)",
+                  width: "180px", outline: "none",
+                }}
+              />
+              <input
+                type="month"
+                value={searchMonth}
+                onChange={(e) => setSearchMonth(e.target.value)}
+                style={{
+                  padding: "8px 14px", borderRadius: "var(--radius-button)",
+                  border: "1px solid var(--color-border)", background: "var(--color-card)",
+                  color: "var(--color-text)", fontSize: "13px", fontFamily: "var(--font-sans)",
+                  outline: "none",
+                }}
+              />
+              {(searchNumber || searchCustomer || searchMonth) && (
+                <button
+                  onClick={() => { setSearchNumber(""); setSearchCustomer(""); setSearchMonth(""); }}
+                  style={{
+                    padding: "8px 14px", borderRadius: "var(--radius-button)",
+                    border: "1px solid var(--color-border)", background: "var(--color-card)",
+                    color: "var(--color-text-secondary)", fontSize: "13px", fontWeight: "600",
+                    cursor: "pointer", fontFamily: "var(--font-sans)",
+                  }}
+                >
+                  クリア
+                </button>
+              )}
+            </div>
+          )}
+
           {loading ? (
             <div style={{ textAlign: "center", color: "var(--color-text-secondary)", padding: "60px" }}>読み込み中...</div>
           ) : invoices.length === 0 ? (
@@ -391,7 +450,13 @@ export default function InvoiceListPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((inv) => {
+                  {invoices.filter((inv) => {
+                    const custName = Array.isArray(inv.customers) ? inv.customers[0]?.name ?? "" : inv.customers?.name ?? "";
+                    if (searchNumber && !inv.invoice_number.toLowerCase().includes(searchNumber.toLowerCase())) return false;
+                    if (searchCustomer && !custName.toLowerCase().includes(searchCustomer.toLowerCase())) return false;
+                    if (searchMonth && !inv.issue_date.startsWith(searchMonth)) return false;
+                    return true;
+                  }).map((inv) => {
                     const st = statusConfig[inv.status] ?? { label: inv.status, bg: "#f3f4f6", color: "#374151" };
                     return (
                       <tr key={inv.id}

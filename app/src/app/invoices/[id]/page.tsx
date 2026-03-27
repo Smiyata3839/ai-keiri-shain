@@ -472,7 +472,12 @@ export default function InvoiceDetailPage() {
                       }}
                     >
                       <td style={previewTdStyle}>{invoice.issue_date}</td>
-                      <td style={previewTdStyle}>{item.description}</td>
+                      <td style={previewTdStyle}>
+                        {item.description}
+                        {item.tax_rate === 8 && (
+                          <span style={{ fontSize: "10px", verticalAlign: "super", marginLeft: "2px" }}>※</span>
+                        )}
+                      </td>
                       <td style={{ ...previewTdStyle, textAlign: "right" }}>
                         {item.quantity.toLocaleString()}
                       </td>
@@ -492,6 +497,11 @@ export default function InvoiceDetailPage() {
                   ))}
                 </tbody>
               </table>
+              {items.some((item) => item.tax_rate === 8) && (
+                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", marginBottom: "12px", textAlign: "right" }}>
+                  ※軽減税率対象
+                </div>
+              )}
 
               {/* Summary */}
               <div
