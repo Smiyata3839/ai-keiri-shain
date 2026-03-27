@@ -2,6 +2,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
+import { useEffect, useState, useRef } from "react";
 import {
   MessageSquare,
   LayoutDashboard,
@@ -17,6 +18,7 @@ import {
   Users,
   Building2,
   LogOut,
+  Camera,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -77,6 +79,39 @@ export function Sidebar({ className }: { className?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadLogo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: company } = await supabase
+        .from("companies").select("id, logo_url").eq("user_id", user.id).single();
+      if (company) {
+        setCompanyId(company.id);
+        if (company.logo_url) setLogoUrl(company.logo_url);
+      }
+    };
+    loadLogo();
+  }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 2 * 1024 * 1024) { alert("画像は2MB以下にしてください"); return; }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      setLogoUrl(base64);
+      await supabase.from("companies").update({ logo_url: base64 }).eq("id", companyId);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -111,17 +146,58 @@ export function Sidebar({ className }: { className?: string }) {
           gap: "var(--space-2)",
         }}
       >
-        <Image
-          src="/ai-accountant.png"
-          alt="AI経理社員"
-          width={120}
-          height={120}
-          style={{
-            borderRadius: "var(--radius-lg)",
-            objectFit: "contain",
-          }}
-          priority
-        />
+        <div
+          style={{ position: "relative", cursor: "pointer" }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="ロゴ"
+              width={120}
+              height={120}
+              style={{
+                borderRadius: "50%",
+                objectFit: "cover",
+                width: "120px",
+                height: "120px",
+              }}
+            />
+          ) : (
+            <Image
+              src="/ai-accountant.png"
+              alt="AI経理社員"
+              width={120}
+              height={120}
+              style={{
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+              priority
+            />
+          )}
+          <div style={{
+            position: "absolute",
+            bottom: "4px",
+            right: "4px",
+            width: "28px",
+            height: "28px",
+            borderRadius: "50%",
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}>
+            <Camera size={14} color="white" />
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleImageUpload}
+          />
+        </div>
         <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
           AI経理社員
         </span>
