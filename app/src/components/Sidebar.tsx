@@ -173,76 +173,81 @@ export function Sidebar({ className }: { className?: string }) {
         overflowY: "auto",
       }}
     >
-      {/* キャラクターロゴ + アクションアイコン */}
+      {/* キャラクターロゴ */}
       <div
         style={{
           padding: "var(--space-6) var(--space-6) var(--space-4)",
           borderBottom: "1px solid var(--color-sidebar-border)",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          gap: "16px",
+          gap: "var(--space-2)",
         }}
       >
-        {/* アバター */}
-        <div
-          style={{ position: "relative", cursor: "pointer", flexShrink: 0 }}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="ロゴ"
-              width={80}
-              height={80}
-              style={{
-                borderRadius: "50%",
-                objectFit: "cover",
-                width: "80px",
-                height: "80px",
-              }}
+        {/* アバター + 右側アクションアイコン */}
+        <div style={{ position: "relative" }}>
+          <div
+            style={{ cursor: "pointer" }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="ロゴ"
+                width={120}
+                height={120}
+                style={{
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  width: "120px",
+                  height: "120px",
+                }}
+              />
+            ) : (
+              <Image
+                src="/ai-accountant.png"
+                alt="AI経理社員"
+                width={120}
+                height={120}
+                style={{
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+                priority
+              />
+            )}
+            <div style={{
+              position: "absolute",
+              bottom: "4px",
+              left: "4px",
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              <Camera size={14} color="white" />
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleImageUpload}
             />
-          ) : (
-            <Image
-              src="/ai-accountant.png"
-              alt="AI経理社員"
-              width={80}
-              height={80}
-              style={{
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
-              priority
-            />
-          )}
+          </div>
+          {/* 右側にベル・設定を縦並び */}
           <div style={{
             position: "absolute",
-            bottom: "2px",
-            right: "2px",
-            width: "24px",
-            height: "24px",
-            borderRadius: "50%",
-            background: "rgba(0,0,0,0.6)",
+            right: "-12px",
+            top: "50%",
+            transform: "translateY(-50%)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            flexDirection: "column",
+            gap: "10px",
           }}>
-            <Camera size={12} color="white" />
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={handleImageUpload}
-          />
-        </div>
-
-        {/* 名前 + アクションアイコン */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
-            AI経理社員
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {/* ベル通知 */}
             <div
               style={{ position: "relative", cursor: "pointer" }}
@@ -274,13 +279,14 @@ export function Sidebar({ className }: { className?: string }) {
             <div
               style={{ cursor: "pointer" }}
               onClick={() => router.push("/company")}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = ""}
             >
               <Settings size={20} color="rgba(255,255,255,0.55)" />
             </div>
           </div>
         </div>
+        <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
+          AI経理社員
+        </span>
       </div>
 
       {/* 通知パネル */}
