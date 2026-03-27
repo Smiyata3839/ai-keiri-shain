@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Briefcase } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -54,8 +54,8 @@ export default function LoginPage() {
         boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
       }}>
         <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <div style={{ margin: "0 auto 18px", width: "64px", height: "64px" }}>
-            <img src="/logo.png" style={{ width: "64px", height: "64px", borderRadius: "8px", objectFit: "contain" }} alt="KANBEI" />
+          <div style={{ margin: "0 auto 18px", width: "64px", height: "64px", background: "#ffffff", borderRadius: "8px" }}>
+            <Image src="/logo.png" alt="KANBEI" width={64} height={64} style={{ borderRadius: "8px", objectFit: "contain" }} priority />
           </div>
           <h1 style={{ fontSize: "26px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
             KANBEI
