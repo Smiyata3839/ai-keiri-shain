@@ -221,6 +221,62 @@ function HeroParticles() {
 }
 
 /* ═══════════════════════════════════════════
+   Seigaiha (青海波) Pattern + KANBEI Mon Overlay
+   Uses unique pattern IDs per instance to avoid SVG conflicts
+   ═══════════════════════════════════════════ */
+let seigaihaCounter = 0;
+
+function SeigaihaOverlay() {
+  const id = useRef(`seigaiha-${++seigaihaCounter}`).current;
+  const patternId = `${id}-pat`;
+  const maskId = `${id}-mask`;
+
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.05 }} xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id={patternId} x="0" y="0" width="56" height="28" patternUnits="userSpaceOnUse">
+            <path d="M28 0c15.46 0 28 12.54 28 28" fill="none" stroke="white" strokeWidth="0.5" />
+            <path d="M28 0c-15.46 0-28 12.54-28 28" fill="none" stroke="white" strokeWidth="0.5" />
+            <path d="M28 0c11.05 0 20 8.95 20 20" fill="none" stroke="white" strokeWidth="0.5" />
+            <path d="M28 0c-11.05 0-20 8.95-20 20" fill="none" stroke="white" strokeWidth="0.5" />
+            <path d="M28 0c6.63 0 12 5.37 12 12" fill="none" stroke="white" strokeWidth="0.5" />
+            <path d="M28 0c-6.63 0-12 5.37-12 12" fill="none" stroke="white" strokeWidth="0.5" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${patternId})`} />
+      </svg>
+
+      {/* KANBEIロゴ「家紋」— 青海波パターンで描かれたロゴシルエット */}
+      <svg
+        style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, height: 420, opacity: 0.08 }}
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 420 420"
+      >
+        <defs>
+          <pattern id={`${maskId}-pat`} x="0" y="0" width="56" height="28" patternUnits="userSpaceOnUse">
+            <path d="M28 0c15.46 0 28 12.54 28 28" fill="none" stroke="white" strokeWidth="1" />
+            <path d="M28 0c-15.46 0-28 12.54-28 28" fill="none" stroke="white" strokeWidth="1" />
+            <path d="M28 0c11.05 0 20 8.95 20 20" fill="none" stroke="white" strokeWidth="1" />
+            <path d="M28 0c-11.05 0-20 8.95-20 20" fill="none" stroke="white" strokeWidth="1" />
+            <path d="M28 0c6.63 0 12 5.37 12 12" fill="none" stroke="white" strokeWidth="1" />
+            <path d="M28 0c-6.63 0-12 5.37-12 12" fill="none" stroke="white" strokeWidth="1" />
+          </pattern>
+          <mask id={maskId}>
+            <image href="/logo-lp.png" x="70" y="50" width="280" height="280" style={{ filter: "invert(1)" }} />
+          </mask>
+        </defs>
+        {/* 円形の枠 */}
+        <circle cx="210" cy="210" r="200" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
+        <circle cx="210" cy="210" r="208" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
+        {/* 青海波パターンをロゴの形で表示 */}
+        <rect width="420" height="420" fill={`url(#${maskId}-pat)`} mask={`url(#${maskId})`} />
+      </svg>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
    Counter (requestAnimationFrame)
    ═══════════════════════════════════════════ */
 function Counter({ target }: { target: number }) {
@@ -407,8 +463,9 @@ export default function LPPage() {
       </section>
 
       {/* ══════ Section 3: Solution ══════ */}
-      <section id="solution" style={{ background: "var(--bg-dark)", padding: "120px 0", color: "white", textAlign: "center" }}>
-        <div className="section" style={{ padding: "0 24px" }}>
+      <section id="solution" style={{ background: "var(--bg-dark)", padding: "120px 0", color: "white", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <SeigaihaOverlay />
+        <div className="section" style={{ padding: "0 24px", position: "relative", zIndex: 1 }}>
           <div className="fade-in" style={{ marginBottom: 24 }}>
             <Image
               src="/logo-lp.png" alt="KANBEI" width={120} height={120}
@@ -578,7 +635,7 @@ export default function LPPage() {
       </section>
 
       {/* ══════ Section 7: Case Study ══════ */}
-      <section style={{ background: "var(--bg-sub)", padding: "100px 0" }}>
+      <section id="case-study" style={{ background: "var(--bg-sub)", padding: "100px 0" }}>
         <div className="section">
           <h2 className="fade-in section-title" style={{ fontSize: 48, fontWeight: 800, textAlign: "center", marginBottom: 48 }}>
             導入事例
@@ -618,8 +675,9 @@ export default function LPPage() {
       </section>
 
       {/* ══════ Section 8: CTA ══════ */}
-      <section style={{ background: "var(--bg-dark)", padding: "140px 24px", textAlign: "center", color: "white" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      <section style={{ background: "var(--bg-dark)", padding: "140px 24px", textAlign: "center", color: "white", position: "relative", overflow: "hidden" }}>
+        <SeigaihaOverlay />
+        <div style={{ maxWidth: 720, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <h2 className="fade-in" style={{ fontFamily: "var(--font-serif)", fontSize: 56, fontWeight: 800, color: "white", lineHeight: 1.4, marginBottom: 24 }}>
             経営の参謀を、<br />今すぐ手に入れる。
           </h2>
@@ -636,22 +694,24 @@ export default function LPPage() {
       </section>
 
       {/* ══════ Section 9: Footer ══════ */}
-      <footer style={{ background: "var(--bg-dark)", borderTop: "1px solid rgba(255,255,255,.08)", padding: "60px 24px 32px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <footer style={{ background: "var(--bg-dark)", borderTop: "1px solid rgba(255,255,255,.08)", padding: "60px 24px 32px", position: "relative", overflow: "hidden" }}>
+        <SeigaihaOverlay />
+        <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40, marginBottom: 40 }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <Image src="/logo-lp.png" alt="KANBEI" width={36} height={36} style={{ filter: "brightness(0) invert(1)", objectFit: "contain" }} />
                 <span style={{ fontFamily: "var(--font-serif)", fontSize: 18, color: "white", fontWeight: 700 }}>KANBEI</span>
               </div>
-              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13 }}>あなたの会社の、経理参謀。</p>
+              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13, marginBottom: 8 }}>あなたの会社の、経理参謀。</p>
+              <p style={{ color: "rgba(255,255,255,.4)", fontSize: 12 }}>運営：株式会社TMファースト</p>
             </div>
             <div>
               <p style={{ color: "rgba(255,255,255,.4)", fontSize: 11, letterSpacing: "0.15em", marginBottom: 12, fontWeight: 700 }}>MENU</p>
               {[
                 { label: "機能", id: "solution" },
                 { label: "料金", id: "pricing" },
-                { label: "事例", id: "", href: undefined },
+                { label: "事例", id: "case-study", href: undefined },
                 { label: "無料相談", id: undefined, href: CTA_URL },
               ].map((link) => (
                 <p key={link.label} style={{ marginBottom: 8 }}>
@@ -665,7 +725,9 @@ export default function LPPage() {
             </div>
             <div>
               <p style={{ color: "rgba(255,255,255,.4)", fontSize: 11, letterSpacing: "0.15em", marginBottom: 12, fontWeight: 700 }}>COMPANY</p>
-              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13 }}>XANA Arabia Company</p>
+              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13, marginBottom: 8 }}>XANA Arabia Company</p>
+              <p style={{ marginBottom: 8 }}><a href="https://buildforce.studio.site/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>運営会社</a></p>
+              <p><a href="https://xana.net/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>開発元</a></p>
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 24, textAlign: "center" }}>
