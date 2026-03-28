@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -66,9 +65,6 @@ export default function LoginPage() {
       }}>
         {/* Logo & Title */}
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <div style={{ margin: "0 auto 20px", width: "72px", height: "72px" }}>
-            <Image src="/logo.png" alt="KANBEI" width={72} height={72} style={{ borderRadius: "16px", objectFit: "contain" }} priority />
-          </div>
           <h1 style={{ fontSize: "32px", fontWeight: "700", color: "#1d1d1f", margin: "0 0 8px", letterSpacing: "-0.5px" }}>
             KANBEI
           </h1>
