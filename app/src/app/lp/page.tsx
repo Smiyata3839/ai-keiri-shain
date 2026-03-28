@@ -189,7 +189,7 @@ export default function LPPage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <Image src="/logo.png" alt="KANBEI" width={36} height={36} style={{ borderRadius: 8 }} />
+          <Image src="/logo-lp.png" alt="KANBEI" width={36} height={36} style={{ borderRadius: 8, background: C.white }} />
           <span style={{ fontFamily: display, fontSize: 26, color: C.white, letterSpacing: 2 }}>KANBEI</span>
         </div>
         <GoldButton onClick={() => scrollTo("contact")}>無料相談はこちら</GoldButton>
@@ -210,7 +210,7 @@ export default function LPPage() {
         <AsanohaOverlay />
         {/* Logo silhouette */}
         <div style={{ position: "absolute", right: -60, top: "50%", transform: "translateY(-50%)", opacity: 0.06, pointerEvents: "none" }}>
-          <Image src="/logo.png" alt="" width={600} height={600} style={{ filter: "brightness(2) invert(1)" }} />
+          <Image src="/logo-lp.png" alt="" width={600} height={600} style={{ filter: "invert(1)" }} />
         </div>
 
         <Container style={{ position: "relative", zIndex: 1, paddingTop: 120, paddingBottom: 80 }}>
@@ -271,7 +271,7 @@ export default function LPPage() {
       {/* ══════ Section 2: Problem Deep Dive ══════ */}
       <section style={{ background: C.offwhite, padding: "100px 0", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", left: -100, top: "50%", transform: "translateY(-50%)", opacity: 0.04, pointerEvents: "none" }}>
-          <Image src="/logo.png" alt="" width={400} height={400} />
+          <Image src="/logo-lp.png" alt="" width={400} height={400} style={{ opacity: 0.6 }} />
         </div>
         <Container>
           <FadeInUp>
@@ -341,7 +341,7 @@ export default function LPPage() {
                   filter: "blur(20px)",
                 }}
               />
-              <Image src="/logo.png" alt="KANBEI" width={120} height={120} style={{ borderRadius: 24, position: "relative" }} />
+              <Image src="/logo-lp.png" alt="KANBEI" width={120} height={120} style={{ borderRadius: 24, position: "relative", background: C.white }} />
             </motion.div>
           </FadeInUp>
 
@@ -625,7 +625,7 @@ export default function LPPage() {
         }}
       >
         <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", opacity: 0.05, pointerEvents: "none" }}>
-          <Image src="/logo.png" alt="" width={500} height={500} style={{ filter: "brightness(2) invert(1)" }} />
+          <Image src="/logo-lp.png" alt="" width={500} height={500} style={{ filter: "invert(1)" }} />
         </div>
         <Container style={{ position: "relative", zIndex: 1 }}>
           <FadeInUp>
@@ -711,7 +711,7 @@ export default function LPPage() {
           >
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                <Image src="/logo.png" alt="KANBEI" width={36} height={36} style={{ borderRadius: 8 }} />
+                <Image src="/logo-lp.png" alt="KANBEI" width={36} height={36} style={{ borderRadius: 8, background: C.white }} />
                 <span style={{ fontFamily: display, fontSize: 24, color: C.white, letterSpacing: 2 }}>KANBEI</span>
               </div>
               <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
