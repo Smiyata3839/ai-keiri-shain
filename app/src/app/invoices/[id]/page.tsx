@@ -511,19 +511,36 @@ export default function InvoiceDetailPage() {
                   marginBottom: "32px",
                 }}
               >
-                <div style={{ width: "260px" }}>
+                <div style={{ width: "380px" }}>
                   <div style={summaryRowStyle}>
                     <span>小計</span>
                     <span>{invoice.subtotal.toLocaleString()}円</span>
                   </div>
-                  <div style={summaryRowStyle}>
-                    <span>消費税（8%）</span>
-                    <span>{invoice.tax_8.toLocaleString()}円</span>
-                  </div>
-                  <div style={summaryRowStyle}>
-                    <span>消費税（10%）</span>
-                    <span>{invoice.tax_10.toLocaleString()}円</span>
-                  </div>
+                  {/* Tax breakdown: rate / taxable amount / tax amount */}
+                  {(() => {
+                    const subtotal8 = items.filter((it) => it.tax_rate === 8).reduce((s, it) => s + it.amount, 0);
+                    const subtotal10 = items.filter((it) => it.tax_rate === 10).reduce((s, it) => s + it.amount, 0);
+                    return (
+                      <>
+                        {subtotal8 > 0 && (
+                          <div style={{ ...summaryRowStyle, display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ width: "80px" }}>8%対象</span>
+                            <span style={{ width: "100px", textAlign: "right" }}>{subtotal8.toLocaleString()}円</span>
+                            <span style={{ width: "80px", textAlign: "right" }}>消費税</span>
+                            <span style={{ width: "100px", textAlign: "right" }}>{invoice.tax_8.toLocaleString()}円</span>
+                          </div>
+                        )}
+                        {subtotal10 > 0 && (
+                          <div style={{ ...summaryRowStyle, display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ width: "80px" }}>10%対象</span>
+                            <span style={{ width: "100px", textAlign: "right" }}>{subtotal10.toLocaleString()}円</span>
+                            <span style={{ width: "80px", textAlign: "right" }}>消費税</span>
+                            <span style={{ width: "100px", textAlign: "right" }}>{invoice.tax_10.toLocaleString()}円</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   <div
                     style={{
                       ...summaryRowStyle,
