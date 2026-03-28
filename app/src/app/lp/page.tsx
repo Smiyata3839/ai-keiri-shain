@@ -248,30 +248,50 @@ function SeigaihaOverlay() {
       </svg>
 
       {/* KANBEIロゴ「家紋」— 青海波パターンで描かれたロゴシルエット */}
-      <svg
-        style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: 420, height: 420, opacity: 0.08 }}
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 420 420"
+      <div
+        style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 420, height: 420, opacity: 0.1,
+        }}
       >
-        <defs>
-          <pattern id={`${maskId}-pat`} x="0" y="0" width="56" height="28" patternUnits="userSpaceOnUse">
-            <path d="M28 0c15.46 0 28 12.54 28 28" fill="none" stroke="white" strokeWidth="1" />
-            <path d="M28 0c-15.46 0-28 12.54-28 28" fill="none" stroke="white" strokeWidth="1" />
-            <path d="M28 0c11.05 0 20 8.95 20 20" fill="none" stroke="white" strokeWidth="1" />
-            <path d="M28 0c-11.05 0-20 8.95-20 20" fill="none" stroke="white" strokeWidth="1" />
-            <path d="M28 0c6.63 0 12 5.37 12 12" fill="none" stroke="white" strokeWidth="1" />
-            <path d="M28 0c-6.63 0-12 5.37-12 12" fill="none" stroke="white" strokeWidth="1" />
-          </pattern>
-          <mask id={maskId}>
-            <image href="/logo-lp.png" x="70" y="50" width="280" height="280" style={{ filter: "invert(1)" }} />
-          </mask>
-        </defs>
         {/* 円形の枠 */}
-        <circle cx="210" cy="210" r="200" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-        <circle cx="210" cy="210" r="208" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" />
-        {/* 青海波パターンをロゴの形で表示 */}
-        <rect width="420" height="420" fill={`url(#${maskId}-pat)`} mask={`url(#${maskId})`} />
-      </svg>
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="210" cy="210" r="200" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+          <circle cx="210" cy="210" r="208" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+        </svg>
+        {/* ロゴシルエットの中に青海波パターンを表示（CSS maskで抜く） */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 280, height: 280,
+            WebkitMaskImage: "url(/logo-lp.png)",
+            WebkitMaskSize: "contain",
+            WebkitMaskRepeat: "no-repeat",
+            WebkitMaskPosition: "center",
+            maskImage: "url(/logo-lp.png)",
+            maskSize: "contain",
+            maskRepeat: "no-repeat",
+            maskPosition: "center",
+          }}
+        >
+          <svg style={{ width: "100%", height: "100%" }} xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id={`${maskId}-pat`} x="0" y="0" width="28" height="14" patternUnits="userSpaceOnUse">
+                <path d="M14 0c7.73 0 14 6.27 14 14" fill="none" stroke="white" strokeWidth="0.8" />
+                <path d="M14 0c-7.73 0-14 6.27-14 14" fill="none" stroke="white" strokeWidth="0.8" />
+                <path d="M14 0c5.52 0 10 4.48 10 10" fill="none" stroke="white" strokeWidth="0.8" />
+                <path d="M14 0c-5.52 0-10 4.48-10 10" fill="none" stroke="white" strokeWidth="0.8" />
+                <path d="M14 0c3.31 0 6 2.69 6 6" fill="none" stroke="white" strokeWidth="0.8" />
+                <path d="M14 0c-3.31 0-6 2.69-6 6" fill="none" stroke="white" strokeWidth="0.8" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill={`url(#${maskId}-pat)`} />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 }
@@ -597,7 +617,7 @@ export default function LPPage() {
                   </p>
                 ))}
               </div>
-              <button className="btn-secondary" style={{ width: "100%" }} onClick={() => scrollTo("pricing")}>お問い合わせ</button>
+              <a href={CTA_URL} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ width: "100%", textAlign: "center" }}>無料相談はこちら</a>
             </div>
 
             {/* Plan 2 (recommended) */}
@@ -615,10 +635,10 @@ export default function LPPage() {
                 おすすめ
               </span>
               <p style={{ fontSize: 11, color: "var(--blue)", letterSpacing: "0.2em", fontWeight: 700, marginBottom: 16 }}>2 YEAR PLAN</p>
-              <p style={{ fontSize: 42, fontFamily: "var(--font-serif)", color: "var(--blue)", fontWeight: 700, marginBottom: 4, lineHeight: 1 }}>¥2,400,000</p>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>税抜 / 年額（一括払い ¥4,800,000）</p>
+              <p style={{ fontSize: 42, fontFamily: "var(--font-serif)", color: "var(--blue)", fontWeight: 700, marginBottom: 4, lineHeight: 1 }}>¥4,800,000</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>税抜 / 一括払い</p>
               <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20, marginBottom: 24, flex: 1 }}>
-                {["上記すべて", "長期利用によるAI精度向上", "解約自由"].map((t) => (
+                {["左記すべて", "請求書自動送信機能", "期日超過メール自動送信機能", "長期利用によるAI精度向上"].map((t) => (
                   <p key={t} style={{ fontSize: 14, color: "var(--text-sub)", lineHeight: 2.2, paddingLeft: 20, position: "relative" }}>
                     <span style={{ position: "absolute", left: 0, color: "var(--blue)" }}>✓</span>{t}
                   </p>
@@ -725,7 +745,6 @@ export default function LPPage() {
             </div>
             <div>
               <p style={{ color: "rgba(255,255,255,.4)", fontSize: 11, letterSpacing: "0.15em", marginBottom: 12, fontWeight: 700 }}>COMPANY</p>
-              <p style={{ color: "rgba(255,255,255,.5)", fontSize: 13, marginBottom: 8 }}>XANA Arabia Company</p>
               <p style={{ marginBottom: 8 }}><a href="https://buildforce.studio.site/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>運営会社</a></p>
               <p><a href="https://xana.net/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>開発元</a></p>
             </div>
