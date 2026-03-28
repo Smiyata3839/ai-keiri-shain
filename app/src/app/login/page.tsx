@@ -65,6 +65,9 @@ export default function LoginPage() {
       }}>
         {/* Logo & Title */}
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <p style={{ color: "#86868b", margin: "0 0 4px", fontSize: "12px", fontWeight: "400" }}>
+            あなたの会社の経理参謀
+          </p>
           <h1 style={{ fontSize: "32px", fontWeight: "700", color: "#1d1d1f", margin: "0 0 8px", letterSpacing: "-0.5px" }}>
             KANBEI
           </h1>
