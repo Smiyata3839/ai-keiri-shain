@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
-import { Send, Scissors, TrendingUp, Coins, Target } from "lucide-react";
+import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown } from "lucide-react";
 
 type Message = {
   role: "user" | "assistant";
@@ -42,6 +42,9 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState<Record<number, "good" | "bad">>({});
+  const [showCorrectionFor, setShowCorrectionFor] = useState<number | null>(null);
+  const [correctionText, setCorrectionText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -90,6 +93,32 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, { role: "assistant", content: "エラーが発生しました。もう一度お試しください。" }]);
     }
     setLoading(false);
+  };
+
+  const sendFeedback = async (msgIndex: number, feedbackType: "good" | "bad", correction?: string) => {
+    const userMsg = messages[msgIndex - 1];
+    const assistantMsg = messages[msgIndex];
+    if (!userMsg || !assistantMsg || !companyId) return;
+
+    setFeedbackSent((prev) => ({ ...prev, [msgIndex]: feedbackType }));
+    setShowCorrectionFor(null);
+    setCorrectionText("");
+
+    try {
+      await fetch("/api/chat/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyId,
+          userMessage: userMsg.content,
+          assistantMessage: assistantMsg.content,
+          feedbackType,
+          correction: correction || undefined,
+        }),
+      });
+    } catch {
+      // フィードバック送信失敗は静かに無視
+    }
   };
 
   return (
@@ -155,6 +184,78 @@ export default function ChatPage() {
                 }}>
                   {msg.content}
                 </div>
+                {/* フィードバックボタン（アシスタントメッセージ、初期メッセージ以外） */}
+                {msg.role === "assistant" && i > 0 && (
+                  <div style={{ marginTop: "6px", paddingLeft: "var(--space-1)" }}>
+                    {feedbackSent[i] ? (
+                      <span style={{ fontSize: "11px", color: "var(--color-text-muted)" }}>
+                        {feedbackSent[i] === "good" ? "高評価を送信しました" : "フィードバックを送信しました"}
+                      </span>
+                    ) : showCorrectionFor === i ? (
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <input
+                          value={correctionText}
+                          onChange={(e) => setCorrectionText(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") { sendFeedback(i, "bad", correctionText); } }}
+                          placeholder="正しい回答や修正内容を入力..."
+                          style={{
+                            flex: 1, padding: "6px 10px", fontSize: "12px",
+                            border: "1px solid var(--color-border)", borderRadius: "8px",
+                            outline: "none", fontFamily: "var(--font-sans)",
+                            background: "var(--color-background)", color: "var(--color-text)",
+                          }}
+                        />
+                        <button
+                          onClick={() => sendFeedback(i, "bad", correctionText)}
+                          style={{
+                            padding: "6px 12px", fontSize: "11px", fontWeight: "600",
+                            border: "none", borderRadius: "8px", cursor: "pointer",
+                            background: "var(--color-primary)", color: "white",
+                            fontFamily: "var(--font-sans)",
+                          }}
+                        >
+                          送信
+                        </button>
+                        <button
+                          onClick={() => { setShowCorrectionFor(null); setCorrectionText(""); }}
+                          style={{
+                            padding: "6px 8px", fontSize: "11px",
+                            border: "1px solid var(--color-border)", borderRadius: "8px",
+                            cursor: "pointer", background: "transparent",
+                            color: "var(--color-text-muted)", fontFamily: "var(--font-sans)",
+                          }}
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => sendFeedback(i, "good")}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            color: "var(--color-text-muted)", padding: "2px",
+                            display: "flex", alignItems: "center", gap: "3px", fontSize: "11px",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = "#22c55e"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                        >
+                          <ThumbsUp size={13} />
+                        </button>
+                        <button onClick={() => setShowCorrectionFor(i)}
+                          style={{
+                            background: "none", border: "none", cursor: "pointer",
+                            color: "var(--color-text-muted)", padding: "2px",
+                            display: "flex", alignItems: "center", gap: "3px", fontSize: "11px",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = "#ef4444"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                        >
+                          <ThumbsDown size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}

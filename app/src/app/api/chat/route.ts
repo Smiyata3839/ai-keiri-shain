@@ -281,6 +281,84 @@ ${equityLines.length > 0 ? equityLines.join("\n") : "  （データなし）"}`)
   }
 }
 
+// ============================================================
+// フィードバック学習コンテキスト構築
+// ============================================================
+
+const FEEDBACK_TOPICS = [
+  "仕訳", "消費税", "経費精算", "売掛金", "買掛金", "給与",
+  "決算", "資金繰り", "インボイス", "勘定科目", "減価償却",
+  "税務", "銀行取引",
+];
+
+function extractTopics(message: string): string[] {
+  return FEEDBACK_TOPICS.filter((t) => message.includes(t));
+}
+
+async function buildFeedbackContext(companyId: string, userMessage: string): Promise<string> {
+  if (!companyId) return "";
+
+  try {
+    const topics = extractTopics(userMessage);
+
+    let feedbackRows: Array<{
+      topic: string;
+      user_message: string;
+      assistant_message: string;
+      feedback_type: string;
+      correction: string | null;
+    }> = [];
+
+    if (topics.length > 0) {
+      // トピックマッチしたフィードバックを最大5件取得
+      const { data } = await supabaseAdmin
+        .from("chat_feedback")
+        .select("topic, user_message, assistant_message, feedback_type, correction")
+        .eq("company_id", companyId)
+        .in("topic", topics)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      feedbackRows = data ?? [];
+    }
+
+    // トピックマッチが少ない場合、直近のbadフィードバックを補完
+    if (feedbackRows.length < 3) {
+      const existingIds = feedbackRows.map((r) => `${r.user_message}${r.topic}`);
+      const { data: recentBad } = await supabaseAdmin
+        .from("chat_feedback")
+        .select("topic, user_message, assistant_message, feedback_type, correction")
+        .eq("company_id", companyId)
+        .eq("feedback_type", "bad")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      for (const row of recentBad ?? []) {
+        if (!existingIds.includes(`${row.user_message}${row.topic}`) && feedbackRows.length < 5) {
+          feedbackRows.push(row);
+        }
+      }
+    }
+
+    if (feedbackRows.length === 0) return "";
+
+    const lines = feedbackRows.map((row, i) => {
+      const truncUser = row.user_message.slice(0, 200);
+      const truncAssistant = row.assistant_message.slice(0, 200);
+      if (row.feedback_type === "bad" && row.correction) {
+        return `${i + 1}. [${row.topic}] 質問:「${truncUser}」→ 回答に対するユーザーの修正:「${row.correction}」`;
+      } else if (row.feedback_type === "good") {
+        return `${i + 1}. [${row.topic}] 質問:「${truncUser}」→ 回答:「${truncAssistant}」（ユーザーから高評価）`;
+      } else {
+        return `${i + 1}. [${row.topic}] 質問:「${truncUser}」→ 回答が不適切と評価されました`;
+      }
+    });
+
+    return `【過去の学習内容】\nこの会社との過去のやり取りで得られたフィードバックです。同様の質問には、この学習内容を踏まえて回答してください。\n${lines.join("\n")}`;
+  } catch (e) {
+    console.error("buildFeedbackContext error:", e);
+    return "";
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 認証チェック
@@ -310,11 +388,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // DBデータをsystemプロンプトに注入してClaude APIで回答
-    const dbContext = await buildDbContext(companyId || "");
-    const systemWithContext = dbContext
-      ? `${SYSTEM_PROMPT}\n\n以下はこの会社のリアルタイムの経理データです。ユーザーの質問に回答する際、このデータを参照してください。データにない情報を求められた場合は、該当データがない旨を伝えてください。\n\n${dbContext}`
-      : SYSTEM_PROMPT;
+    // DBデータ + フィードバック学習コンテキストをsystemプロンプトに注入
+    const lastUserMessage = messages[messages.length - 1]?.content ?? "";
+    const [dbContext, feedbackContext] = await Promise.all([
+      buildDbContext(companyId || ""),
+      buildFeedbackContext(companyId || "", lastUserMessage),
+    ]);
+
+    let systemWithContext = SYSTEM_PROMPT;
+    if (dbContext) {
+      systemWithContext += `\n\n以下はこの会社のリアルタイムの経理データです。ユーザーの質問に回答する際、このデータを参照してください。データにない情報を求められた場合は、該当データがない旨を伝えてください。\n\n${dbContext}`;
+    }
+    if (feedbackContext) {
+      systemWithContext += `\n\n${feedbackContext}`;
+    }
 
     const response = await client.messages.create({
       model: "claude-opus-4-6",
