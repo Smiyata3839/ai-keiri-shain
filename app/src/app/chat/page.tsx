@@ -11,6 +11,7 @@ type Message = {
 };
 
 const STORAGE_KEY = "ai-keiri-chat-messages";
+const FEEDBACK_STORAGE_KEY = "ai-keiri-chat-feedback";
 
 const INITIAL_MESSAGE: Message = {
   role: "assistant",
@@ -29,6 +30,15 @@ const loadMessages = (): Message[] => {
   return [INITIAL_MESSAGE];
 };
 
+const loadFeedback = (): Record<number, "good" | "bad"> => {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = sessionStorage.getItem(FEEDBACK_STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore */ }
+  return {};
+};
+
 const KEYWORDS = [
   { label: "経費削減できそうな科目は？", icon: Scissors, message: "経費削減できそうな科目は？" },
   { label: "売上の傾向を教えて", icon: TrendingUp, message: "売上の傾向を教えて" },
@@ -42,7 +52,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
-  const [feedbackSent, setFeedbackSent] = useState<Record<number, "good" | "bad">>({});
+  const [feedbackSent, setFeedbackSent] = useState<Record<number, "good" | "bad">>(loadFeedback);
   const [showCorrectionFor, setShowCorrectionFor] = useState<number | null>(null);
   const [correctionText, setCorrectionText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -69,6 +79,12 @@ export default function ChatPage() {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     } catch { /* storage full — ignore */ }
   }, [messages]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(feedbackSent));
+    } catch { /* ignore */ }
+  }, [feedbackSent]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
