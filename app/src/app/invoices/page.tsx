@@ -19,9 +19,12 @@ type Invoice = {
 const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
   draft: { label: "作成中", bg: "#fef3c7", color: "#92400e" },
   sent: { label: "発行済み", bg: "#d1fae5", color: "#065f46" },
-  paid: { label: "入金済み", bg: "#e6f4ea", color: "#1a7f37" },
+  delivered: { label: "送付済み", bg: "#e8f1fb", color: "#0077b6" },
+  pending: { label: "入金待ち", bg: "#f3eeff", color: "#6e36c8" },
   overdue: { label: "期日超過", bg: "#ffeef0", color: "#d70015" },
+  paid: { label: "入金確認済み", bg: "#e6f4ea", color: "#1a7f37" },
   partial: { label: "一部入金", bg: "#fff3e0", color: "#bf5700" },
+  cancelled: { label: "無効", bg: "#f5f5f7", color: "#6e6e73" },
 };
 
 export default function InvoiceListPage() {

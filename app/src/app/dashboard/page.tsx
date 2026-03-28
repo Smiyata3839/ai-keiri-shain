@@ -104,7 +104,7 @@ export default function DashboardPage() {
         .from("invoices")
         .select("issue_date, total, status")
         .eq("company_id", cid)
-        .in("status", ["paid", "overdue", "sent", "partial"])
+        .in("status", ["paid", "overdue", "sent", "delivered", "pending", "partial"])
         .gte("issue_date", fyStart)
         .lte("issue_date", fyEnd),
       supabase
