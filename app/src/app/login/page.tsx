@@ -36,50 +36,65 @@ export default function LoginPage() {
     setLoading(false);
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "14px 16px",
+    border: "1px solid #d2d2d7",
+    borderRadius: "12px",
+    fontSize: "16px",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "var(--font-sans)",
+    background: "#fbfbfd",
+    color: "#1d1d1f",
+    transition: "border-color 0.2s",
+  };
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #0B1426 0%, #1B2A4A 50%, #0D1B2A 100%)",
+      background: "#ffffff",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       fontFamily: "var(--font-sans)",
     }}>
       <div style={{
-        background: "var(--color-card)",
-        borderRadius: "20px",
-        padding: "52px",
         width: "100%",
-        maxWidth: "420px",
-        boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
+        maxWidth: "380px",
+        padding: "0 24px",
       }}>
-        <div style={{ textAlign: "center", marginBottom: "36px" }}>
-          <div style={{ margin: "0 auto 18px", width: "64px", height: "64px", background: "#ffffff", borderRadius: "8px" }}>
-            <Image src="/logo.png" alt="KANBEI" width={64} height={64} style={{ borderRadius: "8px", objectFit: "contain" }} priority />
+        {/* Logo & Title */}
+        <div style={{ textAlign: "center", marginBottom: "40px" }}>
+          <div style={{ margin: "0 auto 20px", width: "72px", height: "72px" }}>
+            <Image src="/logo.png" alt="KANBEI" width={72} height={72} style={{ borderRadius: "16px", objectFit: "contain" }} priority />
           </div>
-          <h1 style={{ fontSize: "26px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
+          <h1 style={{ fontSize: "32px", fontWeight: "700", color: "#1d1d1f", margin: "0 0 8px", letterSpacing: "-0.5px" }}>
             KANBEI
           </h1>
-          <p style={{ color: "var(--color-text-secondary)", marginTop: "8px", fontSize: "15px" }}>
-            ログインしてください
+          <p style={{ color: "#86868b", margin: 0, fontSize: "15px", fontWeight: "400" }}>
+            アカウントにログイン
           </p>
         </div>
 
+        {/* Error */}
         {error && (
           <div style={{
-            background: error.includes("送信") ? "#d1fae5" : "#fef2f2",
-            color: error.includes("送信") ? "#065f46" : "#dc2626",
+            background: error.includes("送信") ? "#f0fdf4" : "#fef2f2",
+            color: error.includes("送信") ? "#166534" : "#dc2626",
             padding: "12px 16px",
-            borderRadius: "10px",
+            borderRadius: "12px",
             fontSize: "14px",
             marginBottom: "20px",
+            textAlign: "center",
           }}>
             {error}
           </div>
         )}
 
-        <div style={{ marginBottom: "18px" }}>
-          <label style={{ fontSize: "14px", fontWeight: "500", color: "var(--color-text)", display: "block", marginBottom: "8px" }}>
+        {/* Form */}
+        <div style={{ marginBottom: "16px" }}>
+          <label style={{ fontSize: "13px", fontWeight: "600", color: "#1d1d1f", display: "block", marginBottom: "6px" }}>
             メールアドレス
           </label>
           <input
@@ -87,18 +102,14 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="example@company.com"
-            style={{
-              width: "100%", padding: "14px 16px",
-              border: "1px solid var(--color-border)",
-              borderRadius: "10px", fontSize: "16px",
-              outline: "none", boxSizing: "border-box",
-              fontFamily: "var(--font-sans)",
-            }}
+            onFocus={(e) => e.currentTarget.style.borderColor = "#0071e3"}
+            onBlur={(e) => e.currentTarget.style.borderColor = "#d2d2d7"}
+            style={inputStyle}
           />
         </div>
 
         <div style={{ marginBottom: "28px" }}>
-          <label style={{ fontSize: "14px", fontWeight: "500", color: "var(--color-text)", display: "block", marginBottom: "8px" }}>
+          <label style={{ fontSize: "13px", fontWeight: "600", color: "#1d1d1f", display: "block", marginBottom: "6px" }}>
             パスワード
           </label>
           <input
@@ -106,29 +117,31 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            style={{
-              width: "100%", padding: "14px 16px",
-              border: "1px solid var(--color-border)",
-              borderRadius: "10px", fontSize: "16px",
-              outline: "none", boxSizing: "border-box",
-              fontFamily: "var(--font-sans)",
-            }}
+            onFocus={(e) => e.currentTarget.style.borderColor = "#0071e3"}
+            onBlur={(e) => e.currentTarget.style.borderColor = "#d2d2d7"}
+            style={inputStyle}
           />
         </div>
 
+        {/* Buttons */}
         <button
           onClick={handleLogin}
           disabled={loading}
           style={{
-            width: "100%", padding: "16px",
-            background: "linear-gradient(135deg, #00D4FF 0%, #0098B8 100%)",
-            color: "white", border: "none",
-            borderRadius: "var(--radius-button)",
-            fontSize: "16px", fontWeight: "600",
+            width: "100%",
+            padding: "14px",
+            background: "#1d1d1f",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "600",
             cursor: loading ? "not-allowed" : "pointer",
-            opacity: loading ? 0.7 : 1,
-            marginBottom: "12px",
+            opacity: loading ? 0.6 : 1,
+            marginBottom: "10px",
             fontFamily: "var(--font-sans)",
+            transition: "opacity 0.2s",
+            letterSpacing: "0.2px",
           }}
         >
           {loading ? "処理中..." : "ログイン"}
@@ -138,18 +151,26 @@ export default function LoginPage() {
           onClick={handleSignUp}
           disabled={loading}
           style={{
-            width: "100%", padding: "16px",
+            width: "100%",
+            padding: "14px",
             background: "transparent",
-            color: "#00D4FF",
-            border: "2px solid #00D4FF",
-            borderRadius: "var(--radius-button)",
-            fontSize: "16px", fontWeight: "600",
+            color: "#1d1d1f",
+            border: "1px solid #d2d2d7",
+            borderRadius: "12px",
+            fontSize: "16px",
+            fontWeight: "600",
             cursor: loading ? "not-allowed" : "pointer",
             fontFamily: "var(--font-sans)",
+            transition: "background 0.2s",
+            letterSpacing: "0.2px",
           }}
         >
           新規登録
         </button>
+
+        <p style={{ textAlign: "center", marginTop: "32px", fontSize: "12px", color: "#86868b" }}>
+          © KANBEI
+        </p>
       </div>
     </div>
   );
