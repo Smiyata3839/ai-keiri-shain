@@ -314,6 +314,38 @@ async function buildProfileContext(companyId: string): Promise<string> {
 }
 
 // ============================================================
+// 経営者プロファイルコンテキスト構築
+// ============================================================
+
+async function buildOwnerContext(companyId: string): Promise<string> {
+  if (!companyId) return "";
+
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from("owner_profiles")
+      .select("owner_type, diagnosis_summary, strengths, risk_points, communication_style")
+      .eq("company_id", companyId)
+      .single();
+
+    if (!profile || !profile.owner_type) return "";
+
+    return `【経営者タイプ診断結果】
+・タイプ: ${profile.owner_type}
+・特徴: ${profile.diagnosis_summary}
+・強み: ${profile.strengths}
+・注意点: ${profile.risk_points}
+
+【コミュニケーション指針】
+${profile.communication_style}
+
+上記の経営者タイプに寄り添い、コミュニケーション指針に従ったトーンで回答してください。この経営者の強みを活かし、注意点をカバーする提案を心がけてください。`;
+  } catch (e) {
+    console.error("buildOwnerContext error:", e);
+    return "";
+  }
+}
+
+// ============================================================
 // 会社プロファイル自動更新（会話から学習）
 // ============================================================
 
@@ -509,9 +541,10 @@ export async function POST(req: NextRequest) {
     const messagesForClaude = (recentRows ?? []).reverse();
 
     // DBデータ + プロファイル + フィードバック学習コンテキストをsystemプロンプトに注入
-    const [dbContext, profileContext, feedbackContext] = await Promise.all([
+    const [dbContext, profileContext, ownerContext, feedbackContext] = await Promise.all([
       buildDbContext(companyId),
       buildProfileContext(companyId),
+      buildOwnerContext(companyId),
       buildFeedbackContext(companyId, message),
     ]);
 
@@ -521,6 +554,9 @@ export async function POST(req: NextRequest) {
     }
     if (profileContext) {
       systemWithContext += `\n\n${profileContext}`;
+    }
+    if (ownerContext) {
+      systemWithContext += `\n\n${ownerContext}`;
     }
     if (feedbackContext) {
       systemWithContext += `\n\n${feedbackContext}`;
