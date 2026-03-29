@@ -749,7 +749,7 @@ export default function ChatPage() {
       {/* KANBEI Sync パネル（右側） */}
       {syncOpen && (
         <div style={{
-          width: "320px", flexShrink: 0,
+          width: "360px", flexShrink: 0,
           borderLeft: "1px solid var(--color-border)",
           background: "var(--color-card)",
           display: "flex", flexDirection: "column",
