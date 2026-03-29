@@ -320,7 +320,7 @@ async function buildProfileContext(companyId: string): Promise<string> {
 async function maybeUpdateProfile(companyId: string, userMessage: string, assistantMessage: string): Promise<void> {
   // プロファイル更新のトリガーとなるキーワード
   const profileTriggers = [
-    "業種", "事業内容", "うちの会社は", "弊社は", "当社は",
+    "業種", "事業内容", "うちの会社", "弊社", "当社", "自社",
     "いつも", "毎月", "毎回", "基本的に", "原則として",
     "特殊", "例外", "ルール", "決まり",
     "簡易課税", "免税", "課税事業者", "インボイス登録",
