@@ -638,7 +638,7 @@ export default function LPPage() {
               <p style={{ fontSize: 42, fontFamily: "var(--font-serif)", color: "var(--blue)", fontWeight: 700, marginBottom: 4, lineHeight: 1 }}>¥4,800,000</p>
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 24 }}>税抜 / 一括払い</p>
               <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20, marginBottom: 24, flex: 1 }}>
-                {["左記すべて", "請求書自動送信機能", "期日超過メール自動送信機能", "長期利用によるAI精度向上"].map((t) => (
+                {["1 Year Planのすべて", "請求書自動送信機能", "期日超過メール自動送信機能", "長期利用によるAI精度向上"].map((t) => (
                   <p key={t} style={{ fontSize: 14, color: "var(--text-sub)", lineHeight: 2.2, paddingLeft: 20, position: "relative" }}>
                     <span style={{ position: "absolute", left: 0, color: "var(--blue)" }}>✓</span>{t}
                   </p>
