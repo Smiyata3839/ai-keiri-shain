@@ -282,6 +282,113 @@ ${equityLines.length > 0 ? equityLines.join("\n") : "  （データなし）"}`)
 }
 
 // ============================================================
+// 会社プロファイルコンテキスト構築（4層アーキテクチャ 第1層）
+// ============================================================
+
+async function buildProfileContext(companyId: string): Promise<string> {
+  if (!companyId) return "";
+
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from("company_profiles")
+      .select("industry, accounting_characteristics, special_rules, tax_notes, other_notes")
+      .eq("company_id", companyId)
+      .single();
+
+    if (!profile) return "";
+
+    const sections: string[] = [];
+    if (profile.industry) sections.push(`・業種: ${profile.industry}`);
+    if (profile.accounting_characteristics) sections.push(`・経理の特徴: ${profile.accounting_characteristics}`);
+    if (profile.special_rules) sections.push(`・特殊ルール: ${profile.special_rules}`);
+    if (profile.tax_notes) sections.push(`・税務メモ: ${profile.tax_notes}`);
+    if (profile.other_notes) sections.push(`・その他: ${profile.other_notes}`);
+
+    if (sections.length === 0) return "";
+
+    return `【この会社のプロファイル】\nこの会社について過去の対話から学習した情報です。回答の際はこの情報を考慮してください。\n${sections.join("\n")}`;
+  } catch (e) {
+    console.error("buildProfileContext error:", e);
+    return "";
+  }
+}
+
+// ============================================================
+// 会社プロファイル自動更新（会話から学習）
+// ============================================================
+
+async function maybeUpdateProfile(companyId: string, userMessage: string, assistantMessage: string): Promise<void> {
+  // プロファイル更新のトリガーとなるキーワード
+  const profileTriggers = [
+    "業種", "事業内容", "うちの会社は", "弊社は", "当社は",
+    "いつも", "毎月", "毎回", "基本的に", "原則として",
+    "特殊", "例外", "ルール", "決まり",
+    "簡易課税", "免税", "課税事業者", "インボイス登録",
+  ];
+
+  const hasTrigger = profileTriggers.some(t => userMessage.includes(t));
+  if (!hasTrigger) return;
+
+  try {
+    // 現在のプロファイルを取得
+    const { data: currentProfile } = await supabaseAdmin
+      .from("company_profiles")
+      .select("industry, accounting_characteristics, special_rules, tax_notes, other_notes")
+      .eq("company_id", companyId)
+      .single();
+
+    const profileSummary = currentProfile
+      ? `現在のプロファイル:\n業種: ${currentProfile.industry ?? "未設定"}\n経理の特徴: ${currentProfile.accounting_characteristics ?? "未設定"}\n特殊ルール: ${currentProfile.special_rules ?? "未設定"}\n税務メモ: ${currentProfile.tax_notes ?? "未設定"}\nその他: ${currentProfile.other_notes ?? "未設定"}`
+      : "プロファイルはまだ空です。";
+
+    const extractionClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const extraction = await extractionClient.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 512,
+      system: `あなたは会話からの情報抽出エージェントです。ユーザーと経理AIの会話から、会社のプロファイル情報として永続的に記録すべき内容を抽出してください。
+
+${profileSummary}
+
+以下のJSON形式で返してください。更新が不要なフィールドはnullにしてください。既存の値がある場合は、追記・修正する形で新しい値を返してください。
+{"industry": "業種・事業内容 or null", "accounting_characteristics": "経理の特徴 or null", "special_rules": "特殊ルール or null", "tax_notes": "税務メモ or null", "other_notes": "その他 or null", "should_update": true/false}
+
+should_updateがfalseの場合、プロファイル更新は行いません。会社に関する永続的に有用な情報がある場合のみtrueにしてください。`,
+      messages: [
+        { role: "user", content: `ユーザー: ${userMessage.slice(0, 500)}\nアシスタント: ${assistantMessage.slice(0, 500)}` },
+      ],
+    });
+
+    const text = extraction.content[0].type === "text" ? extraction.content[0].text : "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return;
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!parsed.should_update) return;
+
+    const updates: Record<string, string> = {};
+    if (parsed.industry) updates.industry = parsed.industry;
+    if (parsed.accounting_characteristics) updates.accounting_characteristics = parsed.accounting_characteristics;
+    if (parsed.special_rules) updates.special_rules = parsed.special_rules;
+    if (parsed.tax_notes) updates.tax_notes = parsed.tax_notes;
+    if (parsed.other_notes) updates.other_notes = parsed.other_notes;
+
+    if (Object.keys(updates).length === 0) return;
+
+    await supabaseAdmin
+      .from("company_profiles")
+      .upsert(
+        { company_id: companyId, ...updates, updated_at: new Date().toISOString() },
+        { onConflict: "company_id" }
+      );
+
+    console.log("Company profile updated for:", companyId, Object.keys(updates));
+  } catch (e) {
+    console.error("maybeUpdateProfile error:", e);
+    // プロファイル更新失敗はチャットの応答に影響させない
+  }
+}
+
+// ============================================================
 // フィードバック学習コンテキスト構築
 // ============================================================
 
@@ -401,15 +508,19 @@ export async function POST(req: NextRequest) {
       .limit(7);
     const messagesForClaude = (recentRows ?? []).reverse();
 
-    // DBデータ + フィードバック学習コンテキストをsystemプロンプトに注入
-    const [dbContext, feedbackContext] = await Promise.all([
+    // DBデータ + プロファイル + フィードバック学習コンテキストをsystemプロンプトに注入
+    const [dbContext, profileContext, feedbackContext] = await Promise.all([
       buildDbContext(companyId),
+      buildProfileContext(companyId),
       buildFeedbackContext(companyId, message),
     ]);
 
     let systemWithContext = SYSTEM_PROMPT;
     if (dbContext) {
       systemWithContext += `\n\n以下はこの会社のリアルタイムの経理データです。ユーザーの質問に回答する際、このデータを参照してください。データにない情報を求められた場合は、該当データがない旨を伝えてください。\n\n${dbContext}`;
+    }
+    if (profileContext) {
+      systemWithContext += `\n\n${profileContext}`;
     }
     if (feedbackContext) {
       systemWithContext += `\n\n${feedbackContext}`;
@@ -442,6 +553,9 @@ export async function POST(req: NextRequest) {
       .from("chat_sessions")
       .update({ updated_at: new Date().toISOString() })
       .eq("id", sessionId);
+
+    // 会社プロファイル自動学習（非同期・エラーは無視）
+    maybeUpdateProfile(companyId, message, content).catch(() => {});
 
     return NextResponse.json({ content });
   } catch (error) {
