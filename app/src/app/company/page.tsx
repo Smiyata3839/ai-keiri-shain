@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 
 const bankOptions = [
   "みずほ銀行", "三菱UFJ銀行", "三井住友銀行", "りそな銀行",
@@ -170,11 +169,7 @@ export default function CompanyPage() {
   const activePath = "/company";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
@@ -400,7 +395,6 @@ export default function CompanyPage() {
           </div>
         )}
       </div>
-    </div>
   );
 }
 

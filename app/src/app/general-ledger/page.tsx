@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 
 type Journal = {
   id: string;
@@ -132,11 +131,7 @@ export default function GeneralLedgerPage() {
   const activePath = "/general-ledger";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
       <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
       {/* ヘッダー */}
       <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
@@ -249,7 +244,6 @@ export default function GeneralLedgerPage() {
           </div>
         </div>
       </div>
-    </div>
     </div>
     </div>
   );

@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 import { validateInvoice, nonNegativeInteger, positiveInteger } from "@/lib/validation";
 
 type Customer = { id: string; name: string; payment_terms: string | null };
@@ -252,11 +251,7 @@ export default function InvoiceEditPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
@@ -465,7 +460,6 @@ export default function InvoiceEditPage() {
           </div>
         )}
       </div>
-    </div>
   );
 }
 

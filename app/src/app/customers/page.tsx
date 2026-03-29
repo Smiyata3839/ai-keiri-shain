@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 import { validateCustomer, validateCsvFile, validateCustomerCsvRows, type CustomerCsvRowError } from "@/lib/validation";
 
 const PAYMENT_TERMS_OPTIONS = [
@@ -248,11 +247,7 @@ export default function CustomersPage() {
   const activePath = "/customers";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
@@ -572,7 +567,6 @@ export default function CustomersPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 

@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 
 type ReceiptItem = {
   date: string;
@@ -190,11 +189,7 @@ export default function ReceiptsPage() {
   const labelStyle: React.CSSProperties = { fontSize: 13, color: "#6e6e73", display: "block", marginBottom: 6 };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
+      <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
         {/* ヘッダー */}
         <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, color: "#1d1d1f", margin: 0 }}>領収書アップロード</h1>
@@ -420,6 +415,5 @@ export default function ReceiptsPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }

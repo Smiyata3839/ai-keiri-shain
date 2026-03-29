@@ -2,7 +2,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown } from "lucide-react";
 
 type Message = {
@@ -138,12 +137,8 @@ export default function ChatPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* チャットエリア */}
       <div style={{
-        marginLeft: "360px", flex: 1, display: "flex", flexDirection: "column",
+        display: "flex", flexDirection: "column",
         height: "100vh", background: "var(--color-background)",
       }}>
         {/* ヘッダー */}
@@ -387,6 +382,5 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }

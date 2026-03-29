@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 
 // ---------- Types ----------
 type Company = {
@@ -124,13 +123,12 @@ export default function InvoiceDetailPage() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        fontFamily: "var(--font-sans)",
-      }}
-    >
+      <div
+        style={{
+          background: "var(--color-background)",
+          minHeight: "100vh",
+        }}
+      >
       {/* Print Styles */}
       <style>{`
         @media print {
@@ -150,19 +148,6 @@ export default function InvoiceDetailPage() {
           @page { size: A4; margin: 10mm; }
         }
       `}</style>
-
-      <Sidebar className="no-print" />
-
-      {/* Main Content */}
-      <div
-        className="print-content"
-        style={{
-          marginLeft: "360px",
-          flex: 1,
-          background: "var(--color-background)",
-          minHeight: "100vh",
-        }}
-      >
         {/* Header */}
         <div
           className="no-print"
@@ -616,7 +601,6 @@ export default function InvoiceDetailPage() {
           ) : null}
         </div>
       </div>
-    </div>
   );
 }
 

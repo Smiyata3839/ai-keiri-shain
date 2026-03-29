@@ -2,7 +2,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area, CartesianGrid, ReferenceLine,
@@ -157,9 +156,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", padding: "40px" }}>
+    <div style={{ background: "var(--color-background)", minHeight: "100vh", padding: "40px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
             ダッシュボード
@@ -260,7 +257,6 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

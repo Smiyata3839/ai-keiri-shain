@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { Sidebar } from "@/components/Sidebar";
 
 // ステータス定義
 const STATUS_CONFIG: Record<
@@ -215,11 +214,7 @@ export default function ReceivablesPage() {
   const activePath = "/receivables";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background, #f5f5f7)", minHeight: "100vh" }}>
+      <div style={{ background: "var(--color-background, #f5f5f7)", minHeight: "100vh" }}>
       {/* ヘッダー */}
       <div
         style={{
@@ -679,6 +674,5 @@ export default function ReceivablesPage() {
         )}
       </div>
       </div>
-    </div>
   );
 }

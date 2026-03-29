@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { createClient } from "@/lib/supabase/client";
-import { Sidebar } from "@/components/Sidebar";
 import { validateInvoiceCsvRows, type InvoiceCsvRowError } from "@/lib/validation";
 
 type Invoice = {
@@ -184,11 +183,7 @@ export default function InvoiceListPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
-      <Sidebar />
-
-      {/* メインコンテンツ */}
-      <div style={{ marginLeft: "360px", flex: 1, background: "var(--color-background)", minHeight: "100vh" }}>
+      <div style={{ background: "var(--color-background)", minHeight: "100vh" }}>
         {/* ヘッダー */}
         <div style={{
           padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
@@ -516,7 +511,6 @@ export default function InvoiceListPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }
 
