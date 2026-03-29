@@ -23,6 +23,21 @@ export default function LoginPage() {
     setLoading(false);
   };
 
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.signInWithPassword({
+      email: "demo@kanbei.jp",
+      password: "demo1234",
+    });
+    if (error) {
+      setError("デモログインに失敗しました");
+    } else {
+      router.push("/chat");
+    }
+    setLoading(false);
+  };
+
   const handleSignUp = async () => {
     setLoading(true);
     setError("");
@@ -166,6 +181,33 @@ export default function LoginPage() {
         >
           新規登録
         </button>
+
+        <div style={{ marginTop: "28px", textAlign: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ flex: 1, height: "1px", background: "#d2d2d7" }} />
+            <span style={{ fontSize: "12px", color: "#86868b" }}>または</span>
+            <div style={{ flex: 1, height: "1px", background: "#d2d2d7" }} />
+          </div>
+          <button
+            onClick={handleDemoLogin}
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "14px",
+              background: "#f5f5f7",
+              color: "#1d1d1f",
+              border: "1px solid #d2d2d7",
+              borderRadius: "12px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontFamily: "var(--font-sans)",
+              transition: "background 0.2s",
+            }}
+          >
+            デモアカウントでログイン
+          </button>
+        </div>
 
         <p style={{ textAlign: "center", marginTop: "32px", fontSize: "12px", color: "#86868b" }}>
           © KANBEI
