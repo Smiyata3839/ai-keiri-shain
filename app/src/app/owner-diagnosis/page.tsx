@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { DIAGNOSIS_QUESTIONS, OWNER_TYPES, type OwnerType } from "@/lib/owner-types";
+import { DIAGNOSIS_QUESTIONS, OWNER_TYPES, calculateTypeCode, type OwnerType } from "@/lib/owner-types";
 
 export default function OwnerDiagnosisPage() {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState(0); // 0-3: 質問, 4: 結果
+  const [step, setStep] = useState(0); // 0-11: 質問, 12: 結果
   const [answers, setAnswers] = useState<string[]>([]);
   const [result, setResult] = useState<OwnerType | null>(null);
   const [existingProfile, setExistingProfile] = useState<OwnerType | null>(null);
@@ -29,7 +29,7 @@ export default function OwnerDiagnosisPage() {
           if (type) {
             setExistingProfile(type);
             setResult(type);
-            setStep(4);
+            setStep(DIAGNOSIS_QUESTIONS.length);
           }
         }
       }
@@ -42,14 +42,14 @@ export default function OwnerDiagnosisPage() {
     const newAnswers = [...answers, code];
     setAnswers(newAnswers);
 
-    if (newAnswers.length === 4) {
-      const typeCode = newAnswers.join("");
+    if (newAnswers.length === DIAGNOSIS_QUESTIONS.length) {
+      const typeCode = calculateTypeCode(newAnswers);
       const type = OWNER_TYPES[typeCode];
       if (type) {
         setResult(type);
         saveResult(type);
       }
-      setStep(4);
+      setStep(DIAGNOSIS_QUESTIONS.length);
     } else {
       setStep(step + 1);
     }
@@ -90,8 +90,10 @@ export default function OwnerDiagnosisPage() {
     );
   }
 
+  const totalQuestions = DIAGNOSIS_QUESTIONS.length;
+
   // 結果画面
-  if (step === 4 && result) {
+  if (step === totalQuestions && result) {
     return (
       <div style={{ background: "var(--color-background)", minHeight: "100vh", padding: "40px" }}>
         <div style={{ maxWidth: "720px", margin: "0 auto" }}>
@@ -227,25 +229,24 @@ export default function OwnerDiagnosisPage() {
     <div style={{ background: "var(--color-background)", minHeight: "100vh", padding: "40px", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ maxWidth: "600px", width: "100%" }}>
         {/* プログレス */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "32px", justifyContent: "center" }}>
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                width: "60px",
-                height: "4px",
-                borderRadius: "2px",
-                background: i <= step ? "var(--color-primary)" : "var(--color-border)",
-                transition: "background 0.3s",
-              }}
-            />
-          ))}
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{
+            width: "100%", height: "4px", borderRadius: "2px",
+            background: "var(--color-border)", overflow: "hidden",
+          }}>
+            <div style={{
+              width: `${((step + 1) / totalQuestions) * 100}%`,
+              height: "100%", borderRadius: "2px",
+              background: "var(--color-primary)",
+              transition: "width 0.3s ease",
+            }} />
+          </div>
         </div>
 
         {/* 質問ヘッダー */}
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", margin: "0 0 8px 0", fontWeight: "600" }}>
-            Q{step + 1} / 4 — {question.axis}
+            Q{step + 1} / {totalQuestions} — {question.axis}
           </p>
           <h2 style={{ fontSize: "22px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
             {question.label}

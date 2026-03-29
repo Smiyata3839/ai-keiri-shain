@@ -7,14 +7,18 @@
 
 export interface DiagnosisQuestion {
   axis: string;
+  axisIndex: number; // 0-3: どの軸の質問か
   label: string;
   optionA: { code: string; label: string; description: string };
   optionB: { code: string; label: string; description: string };
 }
 
+// 各軸3問 × 4軸 = 12問。各軸の多数決でタイプを決定
 export const DIAGNOSIS_QUESTIONS: DiagnosisQuestion[] = [
+  // ── 軸1: E(拡大) vs S(安定) ──
   {
     axis: "事業方針",
+    axisIndex: 0,
     label: "あなたの事業に対する考え方は？",
     optionA: {
       code: "E",
@@ -28,7 +32,40 @@ export const DIAGNOSIS_QUESTIONS: DiagnosisQuestion[] = [
     },
   },
   {
+    axis: "事業方針",
+    axisIndex: 0,
+    label: "同業他社が新しい分野に進出し始めました。あなたは？",
+    optionA: {
+      code: "E",
+      label: "追随・先行",
+      description: "自社も負けずに新分野へ進出を検討する",
+    },
+    optionB: {
+      code: "S",
+      label: "静観",
+      description: "自社の強みに集中し、状況を見守る",
+    },
+  },
+  {
+    axis: "事業方針",
+    axisIndex: 0,
+    label: "売上が順調に伸びています。次の一手は？",
+    optionA: {
+      code: "E",
+      label: "攻める",
+      description: "新規採用や拠点拡大で、さらに成長を加速させる",
+    },
+    optionB: {
+      code: "S",
+      label: "固める",
+      description: "社内体制や品質管理を整え、足元を固める",
+    },
+  },
+
+  // ── 軸2: N(直感) vs A(分析) ──
+  {
     axis: "意思決定",
+    axisIndex: 1,
     label: "重要な経営判断をするとき、あなたは？",
     optionA: {
       code: "N",
@@ -42,7 +79,40 @@ export const DIAGNOSIS_QUESTIONS: DiagnosisQuestion[] = [
     },
   },
   {
+    axis: "意思決定",
+    axisIndex: 1,
+    label: "新しい取引先から大口の案件が来ました。あなたは？",
+    optionA: {
+      code: "N",
+      label: "直感で判断",
+      description: "相手の人柄や将来性を見て、直感で受けるか決める",
+    },
+    optionB: {
+      code: "A",
+      label: "精査して判断",
+      description: "信用調査や採算シミュレーションをしてから決める",
+    },
+  },
+  {
+    axis: "意思決定",
+    axisIndex: 1,
+    label: "事業がうまくいかない時期。立て直しの方針は？",
+    optionA: {
+      code: "N",
+      label: "経験則で動く",
+      description: "過去の経験から「こうすればいける」と信じて行動する",
+    },
+    optionB: {
+      code: "A",
+      label: "原因を分析",
+      description: "数字を徹底的に洗い出し、ボトルネックを特定してから動く",
+    },
+  },
+
+  // ── 軸3: I(投資) vs C(堅実) ──
+  {
     axis: "資金方針",
+    axisIndex: 2,
     label: "利益が出たとき、あなたの優先順位は？",
     optionA: {
       code: "I",
@@ -56,7 +126,40 @@ export const DIAGNOSIS_QUESTIONS: DiagnosisQuestion[] = [
     },
   },
   {
+    axis: "資金方針",
+    axisIndex: 2,
+    label: "業務効率化のために高額なシステム導入を提案されました。あなたは？",
+    optionA: {
+      code: "I",
+      label: "導入する",
+      description: "長期的な効率化を見込んで、思い切って投資する",
+    },
+    optionB: {
+      code: "C",
+      label: "見送る",
+      description: "今のやり方で回っているなら、無理に投資しない",
+    },
+  },
+  {
+    axis: "資金方針",
+    axisIndex: 2,
+    label: "取引先から「一緒に新しいプロジェクトをやらないか」と誘われました。あなたは？",
+    optionA: {
+      code: "I",
+      label: "資金を投じる",
+      description: "チャンスと見て、必要な資金を確保して参加する",
+    },
+    optionB: {
+      code: "C",
+      label: "リスクを避ける",
+      description: "本業に影響が出るリスクを考え、慎重に判断する",
+    },
+  },
+
+  // ── 軸4: T(共創) vs P(独立) ──
+  {
     axis: "組織運営",
+    axisIndex: 3,
     label: "組織の運営スタイルとして近いのは？",
     optionA: {
       code: "T",
@@ -69,7 +172,56 @@ export const DIAGNOSIS_QUESTIONS: DiagnosisQuestion[] = [
       description: "自分で判断し、少数精鋭でスピーディに動く",
     },
   },
+  {
+    axis: "組織運営",
+    axisIndex: 3,
+    label: "重要な案件の担当者を決めるとき、あなたは？",
+    optionA: {
+      code: "T",
+      label: "任せる",
+      description: "信頼できるメンバーに権限を委譲して任せる",
+    },
+    optionB: {
+      code: "P",
+      label: "自分でやる",
+      description: "重要な案件ほど自分が直接関わりたい",
+    },
+  },
+  {
+    axis: "組織運営",
+    axisIndex: 3,
+    label: "会社の方針を決めるとき、あなたは？",
+    optionA: {
+      code: "T",
+      label: "全員で議論",
+      description: "社員やパートナーの意見を聞いてから方針を固める",
+    },
+    optionB: {
+      code: "P",
+      label: "トップダウン",
+      description: "自分が決めた方針を明確に示し、チームに実行してもらう",
+    },
+  },
 ];
+
+// 12問の回答から4軸のタイプコードを算出（各軸3問の多数決）
+export function calculateTypeCode(answers: string[]): string {
+  const axisCounts: [number, number][] = [[0, 0], [0, 0], [0, 0], [0, 0]]; // [optionA count, optionB count]
+  const axisCodes: [string, string][] = [["E", "S"], ["N", "A"], ["I", "C"], ["T", "P"]];
+
+  answers.forEach((answer, i) => {
+    const question = DIAGNOSIS_QUESTIONS[i];
+    if (answer === question.optionA.code) {
+      axisCounts[question.axisIndex][0]++;
+    } else {
+      axisCounts[question.axisIndex][1]++;
+    }
+  });
+
+  return axisCounts.map((counts, i) =>
+    counts[0] >= counts[1] ? axisCodes[i][0] : axisCodes[i][1]
+  ).join("");
+}
 
 export interface OwnerType {
   code: string;
