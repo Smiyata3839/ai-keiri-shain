@@ -11,6 +11,14 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const redirectAfterLogin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push("/chat"); return; }
+    const { data: company } = await supabase
+      .from("companies").select("id").eq("user_id", user.id).single();
+    router.push(company ? "/chat" : "/onboarding");
+  };
+
   const handleLogin = async () => {
     setLoading(true);
     setError("");
@@ -18,7 +26,7 @@ export default function LoginPage() {
     if (error) {
       setError("メールアドレスまたはパスワードが正しくありません");
     } else {
-      router.push("/chat");
+      await redirectAfterLogin();
     }
     setLoading(false);
   };
@@ -33,7 +41,7 @@ export default function LoginPage() {
     if (error) {
       setError("デモログインに失敗しました");
     } else {
-      router.push("/chat");
+      await redirectAfterLogin();
     }
     setLoading(false);
   };
