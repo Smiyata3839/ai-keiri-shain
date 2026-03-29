@@ -2,13 +2,38 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus } from "lucide-react";
+import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft } from "lucide-react";
+import { OWNER_TYPES, type OwnerType } from "@/lib/owner-types";
 
 type Message = {
   id?: string;
   role: "user" | "assistant";
   content: string;
   created_at?: string;
+};
+
+type CompanyProfile = {
+  industry: string | null;
+  accounting_characteristics: string | null;
+  special_rules: string | null;
+  tax_notes: string | null;
+  other_notes: string | null;
+};
+
+type MonthlySummary = {
+  year_month: string;
+  detail_level: string;
+  financial_summary: string | null;
+  chat_insights: string | null;
+  action_items: string | null;
+};
+
+type AnnualSummary = {
+  fiscal_year: number;
+  financial_summary: string | null;
+  chat_insights: string | null;
+  key_decisions: string | null;
+  owner_type_evaluation: string | null;
 };
 
 const FEEDBACK_STORAGE_KEY = "ai-keiri-chat-feedback";
@@ -34,6 +59,9 @@ const KEYWORDS = [
   { label: "今期の着地予想は？", icon: Target, message: "今期の着地予想は？" },
 ];
 
+// KANBEI Sync 右パネルのセクション切り替え
+type SyncTab = "owner" | "profile" | "monthly" | "annual";
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
@@ -49,6 +77,15 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  // KANBEI Sync state
+  const [syncOpen, setSyncOpen] = useState(true);
+  const [syncTab, setSyncTab] = useState<SyncTab>("owner");
+  const [ownerType, setOwnerType] = useState<OwnerType | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [monthlySummaries, setMonthlySummaries] = useState<MonthlySummary[]>([]);
+  const [annualSummaries, setAnnualSummaries] = useState<AnnualSummary[]>([]);
+  const [syncLoading, setSyncLoading] = useState(true);
 
   // 初期化: セッション取得 + メッセージ読み込み
   useEffect(() => {
@@ -83,9 +120,44 @@ export default function ChatPage() {
           setHasMore(msgData.hasMore);
         }
       }
+
+      // KANBEI Sync データ取得
+      loadSyncData();
     };
     init();
   }, []);
+
+  const loadSyncData = async () => {
+    setSyncLoading(true);
+    try {
+      const [ownerRes, profileRes, monthlyRes, annualRes] = await Promise.all([
+        fetch("/api/owner-profile"),
+        fetch("/api/company-profile"),
+        fetch("/api/monthly-summary"),
+        fetch("/api/annual-summary"),
+      ]);
+
+      if (ownerRes.ok) {
+        const data = await ownerRes.json();
+        if (data.profile?.owner_type) {
+          setOwnerType(OWNER_TYPES[data.profile.owner_type] ?? null);
+        }
+      }
+      if (profileRes.ok) {
+        const data = await profileRes.json();
+        setCompanyProfile(data.profile ?? null);
+      }
+      if (monthlyRes.ok) {
+        const data = await monthlyRes.json();
+        setMonthlySummaries(data.summaries ?? []);
+      }
+      if (annualRes.ok) {
+        const data = await annualRes.json();
+        setAnnualSummaries(data.summaries ?? []);
+      }
+    } catch { /* ignore */ }
+    setSyncLoading(false);
+  };
 
   useEffect(() => {
     try {
@@ -121,22 +193,18 @@ export default function ChatPage() {
   const loadOlderMessages = async () => {
     if (!sessionId || loadingMore || !hasMore) return;
     setLoadingMore(true);
-    // INITIAL_MESSAGE(index 0)の次が一番古いDBメッセージ
     const oldestDbMsg = messages.find((m) => m.created_at);
     const beforeParam = oldestDbMsg?.created_at ? `&before=${oldestDbMsg.created_at}` : "";
     try {
       const res = await fetch(`/api/chat/messages?sessionId=${sessionId}${beforeParam}`);
       const data = await res.json();
       if (data.messages && data.messages.length > 0) {
-        // INITIAL_MESSAGEの直後に古いメッセージを挿入
         setMessages((prev) => [prev[0], ...data.messages, ...prev.slice(1)]);
         setHasMore(data.hasMore);
       } else {
         setHasMore(false);
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
     setLoadingMore(false);
   };
 
@@ -178,15 +246,211 @@ export default function ChatPage() {
           correction: correction || undefined,
         }),
       });
-    } catch {
-      // フィードバック送信失敗は静かに無視
+    } catch { /* ignore */ }
+  };
+
+  const syncTabs: { key: SyncTab; label: string; icon: typeof Brain }[] = [
+    { key: "owner", label: "経営者タイプ", icon: Brain },
+    { key: "profile", label: "会社プロファイル", icon: Building2 },
+    { key: "monthly", label: "月次要約", icon: CalendarDays },
+    { key: "annual", label: "年次要約", icon: CalendarCheck },
+  ];
+
+  const detailLabels: Record<string, { label: string; bg: string; color: string }> = {
+    full: { label: "詳細", bg: "#d1fae5", color: "#065f46" },
+    condensed: { label: "要約", bg: "#fef3c7", color: "#92400e" },
+    minimal: { label: "概要", bg: "#e5e7eb", color: "#374151" },
+  };
+
+  const renderSyncContent = () => {
+    if (syncLoading) {
+      return <p style={{ fontSize: "13px", color: "var(--color-text-muted)", padding: "20px", textAlign: "center" }}>読み込み中...</p>;
+    }
+
+    switch (syncTab) {
+      case "owner":
+        if (!ownerType) {
+          return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: "0 0 12px 0" }}>まだ診断していません</p>
+              <button onClick={() => router.push("/owner-diagnosis")} style={syncButtonStyle}>診断を受ける</button>
+            </div>
+          );
+        }
+        return (
+          <div style={{ padding: "16px" }}>
+            <div style={{ textAlign: "center", marginBottom: "16px" }}>
+              <span style={{
+                display: "inline-block", padding: "3px 12px", borderRadius: "16px",
+                background: "rgba(59,109,240,0.1)", color: "var(--color-primary)",
+                fontSize: "12px", fontWeight: "700", letterSpacing: "2px",
+              }}>{ownerType.code}</span>
+              <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-primary)", margin: "8px 0 2px 0" }}>
+                {ownerType.name}
+              </h3>
+              <p style={{ fontSize: "12px", color: "var(--color-text-muted)", margin: 0 }}>{ownerType.title}</p>
+            </div>
+            <p style={{ fontSize: "13px", lineHeight: "1.7", color: "var(--color-text)", margin: "0 0 14px 0" }}>
+              {ownerType.description}
+            </p>
+            <div style={{ marginBottom: "12px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "700", color: "#059669", margin: "0 0 6px 0" }}>強み</p>
+              {ownerType.strengths.map((s, i) => (
+                <p key={i} style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: "0 0 4px 0", paddingLeft: "10px", textIndent: "-10px" }}>
+                  + {s}
+                </p>
+              ))}
+            </div>
+            <div style={{ marginBottom: "12px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "700", color: "#dc2626", margin: "0 0 6px 0" }}>注意点</p>
+              {ownerType.weaknesses.map((w, i) => (
+                <p key={i} style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: "0 0 4px 0", paddingLeft: "10px", textIndent: "-10px" }}>
+                  ! {w}
+                </p>
+              ))}
+            </div>
+            <div>
+              <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 6px 0" }}>KANBEI対応方針</p>
+              <p style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: 0 }}>
+                {ownerType.communicationStyle}
+              </p>
+            </div>
+          </div>
+        );
+
+      case "profile":
+        if (!companyProfile) {
+          return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: 0 }}>
+                チャットで会社の情報を話すと自動的に学習します
+              </p>
+            </div>
+          );
+        }
+        const profileItems = [
+          { label: "業種", value: companyProfile.industry },
+          { label: "経理の特徴", value: companyProfile.accounting_characteristics },
+          { label: "特殊ルール", value: companyProfile.special_rules },
+          { label: "税務メモ", value: companyProfile.tax_notes },
+          { label: "その他", value: companyProfile.other_notes },
+        ].filter((item) => item.value);
+        if (profileItems.length === 0) {
+          return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: 0 }}>
+                まだ学習データがありません
+              </p>
+            </div>
+          );
+        }
+        return (
+          <div style={{ padding: "16px" }}>
+            {profileItems.map((item, i) => (
+              <div key={i} style={{ marginBottom: "14px" }}>
+                <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 4px 0" }}>
+                  {item.label}
+                </p>
+                <p style={{ fontSize: "13px", lineHeight: "1.6", color: "var(--color-text)", margin: 0 }}>
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "monthly":
+        if (monthlySummaries.length === 0) {
+          return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: "0 0 12px 0" }}>まだ月次要約がありません</p>
+              <button onClick={() => router.push("/monthly-summary")} style={syncButtonStyle}>月次要約を生成</button>
+            </div>
+          );
+        }
+        return (
+          <div style={{ padding: "16px" }}>
+            {monthlySummaries.slice(0, 3).map((s, i) => {
+              const dl = detailLabels[s.detail_level] ?? detailLabels.full;
+              return (
+                <div key={i} style={{
+                  marginBottom: "14px", padding: "12px",
+                  background: "var(--color-background)", borderRadius: "10px",
+                  border: "1px solid var(--color-border)",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: "var(--color-text)" }}>{s.year_month}</span>
+                    <span style={{
+                      padding: "1px 8px", borderRadius: "10px",
+                      background: dl.bg, color: dl.color, fontSize: "10px", fontWeight: "600",
+                    }}>{dl.label}</span>
+                  </div>
+                  {s.financial_summary && (
+                    <p style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: "0 0 6px 0", whiteSpace: "pre-wrap" }}>
+                      {s.financial_summary}
+                    </p>
+                  )}
+                  {s.action_items && (
+                    <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#dc2626", margin: 0, whiteSpace: "pre-wrap" }}>
+                      {s.action_items}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+            <button onClick={() => router.push("/monthly-summary")} style={{ ...syncButtonStyle, marginTop: "4px" }}>すべて見る</button>
+          </div>
+        );
+
+      case "annual":
+        if (annualSummaries.length === 0) {
+          return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: "0 0 12px 0" }}>まだ年次要約がありません</p>
+              <button onClick={() => router.push("/annual-summary")} style={syncButtonStyle}>年次要約を生成</button>
+            </div>
+          );
+        }
+        return (
+          <div style={{ padding: "16px" }}>
+            {annualSummaries.slice(0, 2).map((s, i) => (
+              <div key={i} style={{
+                marginBottom: "14px", padding: "12px",
+                background: "var(--color-background)", borderRadius: "10px",
+                border: "1px solid var(--color-border)",
+              }}>
+                <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>{s.fiscal_year}年度</span>
+                {s.financial_summary && (
+                  <p style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: "8px 0 6px 0", whiteSpace: "pre-wrap" }}>
+                    {s.financial_summary}
+                  </p>
+                )}
+                {s.owner_type_evaluation && (
+                  <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#7c3aed", margin: 0, whiteSpace: "pre-wrap" }}>
+                    {s.owner_type_evaluation}
+                  </p>
+                )}
+              </div>
+            ))}
+            <button onClick={() => router.push("/annual-summary")} style={{ ...syncButtonStyle, marginTop: "4px" }}>すべて見る</button>
+          </div>
+        );
     }
   };
 
+  const syncButtonStyle: React.CSSProperties = {
+    padding: "6px 16px", borderRadius: "8px",
+    border: "1px solid var(--color-border)", background: "white",
+    color: "var(--color-text-secondary)", fontSize: "12px", fontWeight: "600",
+    cursor: "pointer", fontFamily: "var(--font-sans)",
+  };
+
   return (
+    <div style={{ display: "flex", height: "100vh", background: "var(--color-background)" }}>
+      {/* チャットエリア（中央） */}
       <div style={{
-        display: "flex", flexDirection: "column",
-        height: "100vh", background: "var(--color-background)",
+        flex: 1, display: "flex", flexDirection: "column",
+        minWidth: 0,
       }}>
         {/* ヘッダー */}
         <div style={{
@@ -207,29 +471,46 @@ export default function ChatPage() {
               color: "var(--color-text-muted)",
             }}>KANBEI</p>
           </div>
-          <button
-            onClick={startNewSession}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 14px", borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-background)",
-              color: "var(--color-text-secondary)",
-              fontSize: "12.5px", cursor: "pointer",
-              fontFamily: "var(--font-sans)",
-              transition: "border-color 0.15s",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--color-primary)"; e.currentTarget.style.color = "var(--color-primary)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--color-border)"; e.currentTarget.style.color = "var(--color-text-secondary)"; }}
-          >
-            <Plus size={14} strokeWidth={1.75} />
-            新しい会話
-          </button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              onClick={startNewSession}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "6px 14px", borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-background)",
+                color: "var(--color-text-secondary)",
+                fontSize: "12.5px", cursor: "pointer",
+                fontFamily: "var(--font-sans)",
+                transition: "border-color 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--color-primary)"; e.currentTarget.style.color = "var(--color-primary)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--color-border)"; e.currentTarget.style.color = "var(--color-text-secondary)"; }}
+            >
+              <Plus size={14} strokeWidth={1.75} />
+              新しい会話
+            </button>
+            <button
+              onClick={() => setSyncOpen(!syncOpen)}
+              style={{
+                display: "flex", alignItems: "center", gap: "4px",
+                padding: "6px 12px", borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                background: syncOpen ? "rgba(59,109,240,0.08)" : "var(--color-background)",
+                color: syncOpen ? "var(--color-primary)" : "var(--color-text-secondary)",
+                fontSize: "12.5px", cursor: "pointer",
+                fontFamily: "var(--font-sans)",
+                fontWeight: syncOpen ? "600" : "400",
+              }}
+            >
+              {syncOpen ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+              Sync
+            </button>
+          </div>
         </div>
 
         {/* メッセージ一覧 */}
         <div style={{ flex: 1, overflowY: "auto", padding: "var(--space-6) var(--space-8)" }}>
-          {/* 過去のメッセージ読み込みボタン */}
           {hasMore && (
             <div style={{ textAlign: "center", marginBottom: "var(--space-4)" }}>
               <button
@@ -282,7 +563,6 @@ export default function ChatPage() {
                 }}>
                   {msg.content}
                 </div>
-                {/* フィードバックボタン（アシスタントメッセージ、初期メッセージ以外） */}
                 {msg.role === "assistant" && i > 0 && (
                   <div style={{ marginTop: "6px", paddingLeft: "var(--space-1)" }}>
                     {feedbackSent[i] ? (
@@ -375,13 +655,12 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 下部エリア：クイックアクション + 入力欄 */}
+        {/* 下部エリア */}
         <div style={{
           borderTop: "1px solid var(--color-border)",
           background: "var(--color-card)",
           padding: "var(--space-4) var(--space-8) var(--space-6)",
         }}>
-          {/* クイックアクション */}
           <div style={{
             display: "flex", gap: "var(--space-2)", flexWrap: "wrap",
             marginBottom: "var(--space-3)",
@@ -419,10 +698,7 @@ export default function ChatPage() {
             })}
           </div>
 
-          {/* 入力エリア */}
-          <div style={{
-            display: "flex", gap: "var(--space-2)", alignItems: "flex-end",
-          }}>
+          <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "flex-end" }}>
             <div style={{
               flex: 1,
               borderRadius: "var(--radius-lg)",
@@ -469,5 +745,69 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* KANBEI Sync パネル（右側） */}
+      {syncOpen && (
+        <div style={{
+          width: "320px", flexShrink: 0,
+          borderLeft: "1px solid var(--color-border)",
+          background: "var(--color-card)",
+          display: "flex", flexDirection: "column",
+          height: "100vh",
+          overflow: "hidden",
+        }}>
+          {/* Sync ヘッダー */}
+          <div style={{
+            padding: "16px",
+            borderBottom: "1px solid var(--color-border)",
+            background: "rgba(59,109,240,0.03)",
+          }}>
+            <h3 style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-primary)", margin: 0 }}>
+              KANBEI Sync
+            </h3>
+            <p style={{ fontSize: "11px", color: "var(--color-text-muted)", margin: "2px 0 0 0" }}>
+              経営者に寄り添うAIエンジン
+            </p>
+          </div>
+
+          {/* タブ */}
+          <div style={{
+            display: "flex", borderBottom: "1px solid var(--color-border)",
+            overflow: "hidden",
+          }}>
+            {syncTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = syncTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSyncTab(tab.key)}
+                  style={{
+                    flex: 1, padding: "10px 4px",
+                    border: "none",
+                    borderBottom: isActive ? "2px solid var(--color-primary)" : "2px solid transparent",
+                    background: "transparent",
+                    color: isActive ? "var(--color-primary)" : "var(--color-text-muted)",
+                    cursor: "pointer",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: "3px",
+                    fontSize: "10px", fontWeight: isActive ? "600" : "400",
+                    fontFamily: "var(--font-sans)",
+                    transition: "color 0.15s",
+                  }}
+                >
+                  <Icon size={16} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* コンテンツ */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {renderSyncContent()}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
