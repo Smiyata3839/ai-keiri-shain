@@ -346,6 +346,38 @@ ${profile.communication_style}
 }
 
 // ============================================================
+// 年次要約コンテキスト構築（4層アーキテクチャ 第2層）
+// ============================================================
+
+async function buildAnnualContext(companyId: string): Promise<string> {
+  if (!companyId) return "";
+
+  try {
+    const { data: summaries } = await supabaseAdmin
+      .from("annual_summaries")
+      .select("fiscal_year, financial_summary, chat_insights, key_decisions, owner_type_evaluation")
+      .eq("company_id", companyId)
+      .order("fiscal_year", { ascending: false })
+      .limit(3);
+
+    if (!summaries || summaries.length === 0) return "";
+
+    const sections = summaries.map((s) => {
+      const parts = [`■ ${s.fiscal_year}年度`];
+      if (s.financial_summary) parts.push(`財務: ${s.financial_summary}`);
+      if (s.key_decisions) parts.push(`重要決定: ${s.key_decisions}`);
+      if (s.chat_insights) parts.push(`学び: ${s.chat_insights}`);
+      return parts.join("\n");
+    });
+
+    return `【過去の年次要約】\n過去の年度の記録です。同様の季節的な質問や決算対応の際は、この経験を踏まえて回答してください。\n\n${sections.join("\n\n")}`;
+  } catch (e) {
+    console.error("buildAnnualContext error:", e);
+    return "";
+  }
+}
+
+// ============================================================
 // 会社プロファイル自動更新（会話から学習）
 // ============================================================
 
@@ -541,10 +573,11 @@ export async function POST(req: NextRequest) {
     const messagesForClaude = (recentRows ?? []).reverse();
 
     // DBデータ + プロファイル + フィードバック学習コンテキストをsystemプロンプトに注入
-    const [dbContext, profileContext, ownerContext, feedbackContext] = await Promise.all([
+    const [dbContext, profileContext, ownerContext, annualContext, feedbackContext] = await Promise.all([
       buildDbContext(companyId),
       buildProfileContext(companyId),
       buildOwnerContext(companyId),
+      buildAnnualContext(companyId),
       buildFeedbackContext(companyId, message),
     ]);
 
@@ -557,6 +590,9 @@ export async function POST(req: NextRequest) {
     }
     if (ownerContext) {
       systemWithContext += `\n\n${ownerContext}`;
+    }
+    if (annualContext) {
+      systemWithContext += `\n\n${annualContext}`;
     }
     if (feedbackContext) {
       systemWithContext += `\n\n${feedbackContext}`;

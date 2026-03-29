@@ -19,6 +19,7 @@ import {
   Users,
   Building2,
   Brain,
+  CalendarCheck,
   LogOut,
   Camera,
   Bell,
@@ -84,6 +85,7 @@ const menuGroups: MenuGroup[] = [
       { icon: Users, label: "顧客管理", path: "/customers" },
       { icon: Building2, label: "自社情報", path: "/company" },
       { icon: Brain, label: "経営者診断", path: "/owner-diagnosis" },
+      { icon: CalendarCheck, label: "年次要約", path: "/annual-summary" },
     ],
   },
 ];
