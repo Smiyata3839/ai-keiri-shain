@@ -71,30 +71,40 @@ async function generateMonthlySummary(companyId: string, yearMonth: string, deta
     collectMonthlyChatHistory(companyId, yearMonth),
   ]);
 
+  // データが全くない月はAI呼び出しせず直接返す
+  if (financial.totalSales === 0 && financial.totalExpenses === 0 && chatHistory.includes("履歴はありません")) {
+    return {
+      financial_summary: `${yearMonth}の財務データはありません。`,
+      chat_insights: "この月のチャット履歴はありません。",
+      action_items: "データが蓄積され次第、要約が生成されます。",
+    };
+  }
+
   const detailInstructions: Record<string, string> = {
     full: "詳細に記述してください。各項目3-5文で具体的に。",
     condensed: "要約して記述してください。各項目1-2文で簡潔に。",
     minimal: "最小限に記述してください。各項目1文以内で核心のみ。",
   };
 
-  const aiClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const result = await aiClient.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    system: `あなたは経理コンサルタントです。月次の財務データとチャット履歴から月次要約を作成してください。
+  try {
+    const aiClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const result = await aiClient.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: `あなたは経理コンサルタントです。月次の財務データとチャット履歴から月次要約を作成してください。
 
 詳細度: ${detailLevel} — ${detailInstructions[detailLevel] ?? detailInstructions.full}
 
-以下のJSON形式で返してください:
+以下のJSON形式のみで返してください（JSON以外のテキストは不要です）:
 {
   "financial_summary": "月次の財務実績の要約",
   "chat_insights": "チャット履歴から得た重要なポイント・対応記録",
   "action_items": "来月以降に注意すべき事項・アクションアイテム"
 }`,
-    messages: [
-      {
-        role: "user",
-        content: `【対象月】${yearMonth}
+      messages: [
+        {
+          role: "user",
+          content: `【対象月】${yearMonth}
 
 【財務データ】
 売上: ${yen(financial.totalSales)} / 費用: ${yen(financial.totalExpenses)} / 損益: ${yen(financial.profit)}
@@ -104,15 +114,22 @@ ${financial.expenseLines.join("\n") || "データなし"}
 
 【チャット履歴】
 ${chatHistory}`,
-      },
-    ],
-  });
+        },
+      ],
+    });
 
-  const text = result.content[0].type === "text" ? result.content[0].text : "";
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return null;
+    const text = result.content[0].type === "text" ? result.content[0].text : "";
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("generateMonthlySummary: JSON not found in response:", text.slice(0, 200));
+      return null;
+    }
 
-  return JSON.parse(jsonMatch[0]);
+    return JSON.parse(jsonMatch[0]);
+  } catch (e) {
+    console.error("generateMonthlySummary AI error:", e);
+    return null;
+  }
 }
 
 // 古い月次要約の詳細度を下げる（ローリング圧縮）
