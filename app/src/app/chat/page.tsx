@@ -38,9 +38,11 @@ type AnnualSummary = {
 
 const FEEDBACK_STORAGE_KEY = "ai-keiri-chat-feedback";
 
+const DEFAULT_GREETING = "おはようございます！KANBEIです。今日もサポートします。何かお手伝いできることはありますか？";
+
 const INITIAL_MESSAGE: Message = {
   role: "assistant",
-  content: "おはようございます！KANBEIです。今日もサポートします。何かお手伝いできることはありますか？",
+  content: DEFAULT_GREETING,
 };
 
 const loadFeedback = (): Record<number, "good" | "bad"> => {
@@ -120,6 +122,20 @@ export default function ChatPage() {
           setHasMore(msgData.hasMore);
         }
       }
+
+      // フォローアップ挨拶を取得（新規セッションまたは既存セッションの冒頭）
+      try {
+        const followupRes = await fetch("/api/chat/followup");
+        if (followupRes.ok) {
+          const followupData = await followupRes.json();
+          if (followupData.message) {
+            setMessages((prev) => [
+              { role: "assistant", content: followupData.message },
+              ...prev.slice(1),
+            ]);
+          }
+        }
+      } catch { /* フォローアップ取得失敗時はデフォルトメッセージのまま */ }
 
       // KANBEI Sync データ取得
       loadSyncData();
@@ -222,6 +238,17 @@ export default function ChatPage() {
       setHasMore(false);
       setFeedbackSent({});
       sessionStorage.removeItem(FEEDBACK_STORAGE_KEY);
+
+      // 新しい会話でもフォローアップ挨拶を取得
+      try {
+        const followupRes = await fetch("/api/chat/followup");
+        if (followupRes.ok) {
+          const followupData = await followupRes.json();
+          if (followupData.message) {
+            setMessages([{ role: "assistant", content: followupData.message }]);
+          }
+        }
+      } catch { /* ignore */ }
     }
   };
 
