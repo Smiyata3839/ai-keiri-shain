@@ -368,31 +368,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ content: "認証が必要です。" }, { status: 401 });
     }
 
-    const { messages, companyId } = await req.json();
+    const { sessionId, message } = await req.json();
 
-    // 入力値バリデーション
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json({ content: "メッセージが空です。" }, { status: 400 });
+    if (!sessionId || !message?.trim()) {
+      return NextResponse.json({ content: "sessionIdとメッセージが必要です。" }, { status: 400 });
     }
 
-    // companyIdの所有権を検証
-    if (companyId) {
-      const { data: company } = await supabaseAdmin
-        .from("companies")
-        .select("id")
-        .eq("id", companyId)
-        .eq("user_id", user.id)
-        .single();
-      if (!company) {
-        return NextResponse.json({ content: "アクセス権限がありません。" }, { status: 403 });
-      }
+    // セッションの所有権を検証し、companyIdを取得
+    const { data: session } = await supabaseAdmin
+      .from("chat_sessions")
+      .select("id, company_id, user_id")
+      .eq("id", sessionId)
+      .single();
+    if (!session || session.user_id !== user.id) {
+      return NextResponse.json({ content: "アクセス権限がありません。" }, { status: 403 });
     }
+    const companyId = session.company_id;
+
+    // ユーザーメッセージをDBに保存
+    await supabaseAdmin.from("chat_messages").insert({
+      session_id: sessionId,
+      role: "user",
+      content: message,
+    });
+
+    // 直近7件のメッセージを取得（Claude送信用）
+    const { data: recentRows } = await supabaseAdmin
+      .from("chat_messages")
+      .select("role, content")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false })
+      .limit(7);
+    const messagesForClaude = (recentRows ?? []).reverse();
 
     // DBデータ + フィードバック学習コンテキストをsystemプロンプトに注入
-    const lastUserMessage = messages[messages.length - 1]?.content ?? "";
     const [dbContext, feedbackContext] = await Promise.all([
-      buildDbContext(companyId || ""),
-      buildFeedbackContext(companyId || "", lastUserMessage),
+      buildDbContext(companyId),
+      buildFeedbackContext(companyId, message),
     ]);
 
     let systemWithContext = SYSTEM_PROMPT;
@@ -407,7 +419,7 @@ export async function POST(req: NextRequest) {
       model: "claude-opus-4-6",
       max_tokens: 1024,
       system: systemWithContext,
-      messages: messages.map((m: { role: string; content: string }) => ({
+      messages: messagesForClaude.map((m: { role: string; content: string }) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
       })),
@@ -417,6 +429,19 @@ export async function POST(req: NextRequest) {
       response.content[0].type === "text"
         ? response.content[0].text
         : "回答を生成できませんでした。";
+
+    // アシスタントの回答をDBに保存
+    await supabaseAdmin.from("chat_messages").insert({
+      session_id: sessionId,
+      role: "assistant",
+      content,
+    });
+
+    // セッションのupdated_atを更新
+    await supabaseAdmin
+      .from("chat_sessions")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", sessionId);
 
     return NextResponse.json({ content });
   } catch (error) {

@@ -2,31 +2,20 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus } from "lucide-react";
 
 type Message = {
+  id?: string;
   role: "user" | "assistant";
   content: string;
+  created_at?: string;
 };
 
-const STORAGE_KEY = "ai-keiri-chat-messages";
 const FEEDBACK_STORAGE_KEY = "ai-keiri-chat-feedback";
 
 const INITIAL_MESSAGE: Message = {
   role: "assistant",
   content: "おはようございます！KANBEIです。今日もサポートします。何かお手伝いできることはありますか？",
-};
-
-const loadMessages = (): Message[] => {
-  if (typeof window === "undefined") return [INITIAL_MESSAGE];
-  try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as Message[];
-      if (parsed.length > 0) return parsed;
-    }
-  } catch { /* ignore */ }
-  return [INITIAL_MESSAGE];
 };
 
 const loadFeedback = (): Record<number, "good" | "bad"> => {
@@ -46,18 +35,22 @@ const KEYWORDS = [
 ];
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>(loadMessages);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState<Record<number, "good" | "bad">>(loadFeedback);
   const [showCorrectionFor, setShowCorrectionFor] = useState<number | null>(null);
   const [correctionText, setCorrectionText] = useState("");
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
+  // 初期化: セッション取得 + メッセージ読み込み
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -68,16 +61,31 @@ export default function ChatPage() {
         .select("id")
         .eq("user_id", user.id)
         .single();
-      if (company) setCompanyId(company.id);
+      if (!company) return;
+      setCompanyId(company.id);
+
+      // セッション取得 or 作成
+      const sessionRes = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId: company.id }),
+      });
+      const sessionData = await sessionRes.json();
+      if (!sessionData.sessionId) return;
+      setSessionId(sessionData.sessionId);
+
+      // メッセージ読み込み
+      if (!sessionData.isNew) {
+        const msgRes = await fetch(`/api/chat/messages?sessionId=${sessionData.sessionId}`);
+        const msgData = await msgRes.json();
+        if (msgData.messages && msgData.messages.length > 0) {
+          setMessages([INITIAL_MESSAGE, ...msgData.messages]);
+          setHasMore(msgData.hasMore);
+        }
+      }
     };
     init();
   }, []);
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch { /* storage full — ignore */ }
-  }, [messages]);
 
   useEffect(() => {
     try {
@@ -90,7 +98,7 @@ export default function ChatPage() {
   }, [messages]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || !sessionId) return;
     const userMessage: Message = { role: "user", content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -100,7 +108,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMessage], companyId }),
+        body: JSON.stringify({ sessionId, message: text }),
       });
       const data = await res.json();
       setMessages((prev) => [...prev, { role: "assistant", content: data.content }]);
@@ -108,6 +116,45 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, { role: "assistant", content: "エラーが発生しました。もう一度お試しください。" }]);
     }
     setLoading(false);
+  };
+
+  const loadOlderMessages = async () => {
+    if (!sessionId || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    // INITIAL_MESSAGE(index 0)の次が一番古いDBメッセージ
+    const oldestDbMsg = messages.find((m) => m.created_at);
+    const beforeParam = oldestDbMsg?.created_at ? `&before=${oldestDbMsg.created_at}` : "";
+    try {
+      const res = await fetch(`/api/chat/messages?sessionId=${sessionId}${beforeParam}`);
+      const data = await res.json();
+      if (data.messages && data.messages.length > 0) {
+        // INITIAL_MESSAGEの直後に古いメッセージを挿入
+        setMessages((prev) => [prev[0], ...data.messages, ...prev.slice(1)]);
+        setHasMore(data.hasMore);
+      } else {
+        setHasMore(false);
+      }
+    } catch {
+      // ignore
+    }
+    setLoadingMore(false);
+  };
+
+  const startNewSession = async () => {
+    if (!companyId) return;
+    const res = await fetch("/api/chat/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId, forceNew: true }),
+    });
+    const data = await res.json();
+    if (data.sessionId) {
+      setSessionId(data.sessionId);
+      setMessages([INITIAL_MESSAGE]);
+      setHasMore(false);
+      setFeedbackSent({});
+      sessionStorage.removeItem(FEEDBACK_STORAGE_KEY);
+    }
   };
 
   const sendFeedback = async (msgIndex: number, feedbackType: "good" | "bad", correction?: string) => {
@@ -148,21 +195,61 @@ export default function ChatPage() {
           background: "var(--color-header-bg)",
           backdropFilter: "blur(16px)",
           position: "sticky", top: 0, zIndex: 10,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
-          <h2 style={{
-            margin: 0, fontSize: "16px", fontWeight: "600",
-            color: "var(--color-text)", lineHeight: "1.4",
-          }}>チャット</h2>
-          <p style={{
-            margin: "2px 0 0", fontSize: "12px",
-            color: "var(--color-text-muted)",
-          }}>KANBEI</p>
+          <div>
+            <h2 style={{
+              margin: 0, fontSize: "16px", fontWeight: "600",
+              color: "var(--color-text)", lineHeight: "1.4",
+            }}>チャット</h2>
+            <p style={{
+              margin: "2px 0 0", fontSize: "12px",
+              color: "var(--color-text-muted)",
+            }}>KANBEI</p>
+          </div>
+          <button
+            onClick={startNewSession}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "6px 14px", borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--color-border)",
+              background: "var(--color-background)",
+              color: "var(--color-text-secondary)",
+              fontSize: "12.5px", cursor: "pointer",
+              fontFamily: "var(--font-sans)",
+              transition: "border-color 0.15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--color-primary)"; e.currentTarget.style.color = "var(--color-primary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--color-border)"; e.currentTarget.style.color = "var(--color-text-secondary)"; }}
+          >
+            <Plus size={14} strokeWidth={1.75} />
+            新しい会話
+          </button>
         </div>
 
         {/* メッセージ一覧 */}
         <div style={{ flex: 1, overflowY: "auto", padding: "var(--space-6) var(--space-8)" }}>
+          {/* 過去のメッセージ読み込みボタン */}
+          {hasMore && (
+            <div style={{ textAlign: "center", marginBottom: "var(--space-4)" }}>
+              <button
+                onClick={loadOlderMessages}
+                disabled={loadingMore}
+                style={{
+                  padding: "8px 20px", borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-card)", color: "var(--color-text-muted)",
+                  fontSize: "12px", cursor: loadingMore ? "default" : "pointer",
+                  fontFamily: "var(--font-sans)",
+                }}
+              >
+                {loadingMore ? "読み込み中..." : "過去のメッセージを表示"}
+              </button>
+            </div>
+          )}
+
           {messages.map((msg, i) => (
-            <div key={i} style={{
+            <div key={msg.id || i} style={{
               display: "flex",
               justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
               marginBottom: "var(--space-5)",
