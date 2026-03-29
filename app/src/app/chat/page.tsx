@@ -383,6 +383,7 @@ export default function ChatPage() {
                 </p>
               </div>
             ))}
+            <button onClick={() => router.push("/company-profile")} style={{ ...syncButtonStyle, marginTop: "4px" }}>編集・詳細を見る</button>
           </div>
         );
 
