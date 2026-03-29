@@ -378,6 +378,39 @@ async function buildAnnualContext(companyId: string): Promise<string> {
 }
 
 // ============================================================
+// 月次要約コンテキスト構築（4層アーキテクチャ 第3層）
+// ============================================================
+
+async function buildMonthlyContext(companyId: string): Promise<string> {
+  if (!companyId) return "";
+
+  try {
+    const { data: summaries } = await supabaseAdmin
+      .from("monthly_summaries")
+      .select("year_month, detail_level, financial_summary, chat_insights, action_items")
+      .eq("company_id", companyId)
+      .order("year_month", { ascending: false })
+      .limit(3);
+
+    if (!summaries || summaries.length === 0) return "";
+
+    const sections = summaries.map((s) => {
+      const levelLabel = s.detail_level === "full" ? "" : s.detail_level === "condensed" ? "（要約）" : "（概要）";
+      const parts = [`■ ${s.year_month}${levelLabel}`];
+      if (s.financial_summary) parts.push(`財務: ${s.financial_summary}`);
+      if (s.chat_insights) parts.push(`学び: ${s.chat_insights}`);
+      if (s.action_items) parts.push(`要注意: ${s.action_items}`);
+      return parts.join("\n");
+    });
+
+    return `【直近の月次要約】\n直近数ヶ月の記録です。継続中の課題やアクションアイテムがあれば、フォローアップしてください。\n\n${sections.join("\n\n")}`;
+  } catch (e) {
+    console.error("buildMonthlyContext error:", e);
+    return "";
+  }
+}
+
+// ============================================================
 // 会社プロファイル自動更新（会話から学習）
 // ============================================================
 
@@ -573,11 +606,12 @@ export async function POST(req: NextRequest) {
     const messagesForClaude = (recentRows ?? []).reverse();
 
     // DBデータ + プロファイル + フィードバック学習コンテキストをsystemプロンプトに注入
-    const [dbContext, profileContext, ownerContext, annualContext, feedbackContext] = await Promise.all([
+    const [dbContext, profileContext, ownerContext, annualContext, monthlyContext, feedbackContext] = await Promise.all([
       buildDbContext(companyId),
       buildProfileContext(companyId),
       buildOwnerContext(companyId),
       buildAnnualContext(companyId),
+      buildMonthlyContext(companyId),
       buildFeedbackContext(companyId, message),
     ]);
 
@@ -593,6 +627,9 @@ export async function POST(req: NextRequest) {
     }
     if (annualContext) {
       systemWithContext += `\n\n${annualContext}`;
+    }
+    if (monthlyContext) {
+      systemWithContext += `\n\n${monthlyContext}`;
     }
     if (feedbackContext) {
       systemWithContext += `\n\n${feedbackContext}`;

@@ -20,6 +20,7 @@ import {
   Building2,
   Brain,
   CalendarCheck,
+  CalendarDays,
   LogOut,
   Camera,
   Bell,
@@ -86,6 +87,7 @@ const menuGroups: MenuGroup[] = [
       { icon: Building2, label: "自社情報", path: "/company" },
       { icon: Brain, label: "経営者診断", path: "/owner-diagnosis" },
       { icon: CalendarCheck, label: "年次要約", path: "/annual-summary" },
+      { icon: CalendarDays, label: "月次要約", path: "/monthly-summary" },
     ],
   },
 ];
