@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft } from "lucide-react";
+import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft, Search, X } from "lucide-react";
 import { OWNER_TYPES, type OwnerType } from "@/lib/owner-types";
 
 type Message = {
@@ -59,7 +59,23 @@ const KEYWORDS = [
   { label: "売上の傾向を教えて", icon: TrendingUp, message: "売上の傾向を教えて" },
   { label: "資金繰りを教えて", icon: Coins, message: "資金繰りを教えて" },
   { label: "今期の着地予想は？", icon: Target, message: "今期の着地予想は？" },
+  { label: "経営診断して", icon: Brain, message: "経営診断して" },
 ];
+
+// 経営アドバイスモード
+const ADVISORY_TRIGGERS = [
+  "経営診断", "財務分析", "財務診断", "会社の状況", "経営戦略",
+  "アクションプラン", "経営課題", "SWOT", "今後どうすべき",
+  "経営アドバイス", "経営を分析", "診断して", "経営を見て", "業績分析",
+];
+
+const FULL_TRIGGERS = ["両方", "フルで", "全部", "まとめて", "続けて", "一気に"];
+
+function isAdvisoryTrigger(message: string): boolean {
+  return ADVISORY_TRIGGERS.some((trigger) => message.includes(trigger));
+}
+
+type AdvisoryPhase = "idle" | "diagnosis" | "strategy" | "complete";
 
 // KANBEI Sync 右パネルのセクション切り替え
 type SyncTab = "owner" | "profile" | "monthly" | "annual";
@@ -79,6 +95,10 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  // 経営アドバイスモード state
+  const [advisoryMode, setAdvisoryMode] = useState(false);
+  const [advisoryPhase, setAdvisoryPhase] = useState<AdvisoryPhase>("idle");
 
   // KANBEI Sync state
   const [syncOpen, setSyncOpen] = useState(true);
@@ -185,6 +205,11 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const resetAdvisoryMode = () => {
+    setAdvisoryMode(false);
+    setAdvisoryPhase("idle");
+  };
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading || !sessionId) return;
     const userMessage: Message = { role: "user", content: text };
@@ -192,14 +217,54 @@ export default function ChatPage() {
     setInput("");
     setLoading(true);
 
+    // トリガー検知：経営アドバイスモードの起動判定
+    const shouldStartAdvisory = !advisoryMode && isAdvisoryTrigger(text);
+    const isFullMode = FULL_TRIGGERS.some((t) => text.includes(t));
+    const currentlyAdvisory = advisoryMode || shouldStartAdvisory;
+
+    if (shouldStartAdvisory) {
+      setAdvisoryMode(true);
+      setAdvisoryPhase("diagnosis");
+    }
+
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, message: text }),
-      });
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.content }]);
+      if (currentlyAdvisory) {
+        // 経営アドバイスモード：専用APIにルーティング
+        let phase: string;
+        if (shouldStartAdvisory) {
+          phase = isFullMode ? "full" : "diagnosis";
+        } else if (advisoryPhase === "diagnosis") {
+          // 第1段階完了後の続行リクエスト
+          phase = "strategy";
+          setAdvisoryPhase("strategy");
+        } else {
+          phase = advisoryPhase;
+        }
+
+        const res = await fetch("/api/chat/advisory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, message: text, phase }),
+        });
+        const data = await res.json();
+        setMessages((prev) => [...prev, { role: "assistant", content: data.content }]);
+
+        // フェーズ更新
+        if (phase === "diagnosis") {
+          setAdvisoryPhase("diagnosis");
+        } else if (phase === "strategy" || phase === "full") {
+          setAdvisoryPhase("complete");
+        }
+      } else {
+        // 通常チャット
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, message: text }),
+        });
+        const data = await res.json();
+        setMessages((prev) => [...prev, { role: "assistant", content: data.content }]);
+      }
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "エラーが発生しました。もう一度お試しください。" }]);
     }
@@ -683,9 +748,53 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* 経営診断モードバナー */}
+        {advisoryMode && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 24px",
+            background: "linear-gradient(90deg, rgba(99,102,241,0.10) 0%, rgba(59,130,246,0.08) 100%)",
+            borderTop: "1px solid rgba(99,102,241,0.25)",
+            borderBottom: "1px solid rgba(99,102,241,0.25)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Search size={16} style={{ color: "var(--color-primary)" }} />
+              <span style={{
+                fontSize: "13px", fontWeight: 600,
+                color: "var(--color-primary)", fontFamily: "var(--font-sans)",
+              }}>
+                経営診断モード
+              </span>
+              <span style={{
+                fontSize: "12px", color: "var(--color-text-secondary)",
+                fontFamily: "var(--font-sans)",
+              }}>
+                {advisoryPhase === "diagnosis" && "— 財務データを分析中..."}
+                {advisoryPhase === "strategy" && "— 戦略立案中..."}
+                {advisoryPhase === "complete" && "— 経営診断が完了しました"}
+              </span>
+            </div>
+            <button
+              onClick={resetAdvisoryMode}
+              style={{
+                display: "flex", alignItems: "center", gap: "4px",
+                padding: "4px 12px", borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-background)",
+                color: "var(--color-text-secondary)",
+                fontSize: "12px", cursor: "pointer",
+                fontFamily: "var(--font-sans)",
+              }}
+            >
+              <X size={12} />
+              通常に戻る
+            </button>
+          </div>
+        )}
+
         {/* 下部エリア */}
         <div style={{
-          borderTop: "1px solid var(--color-border)",
+          borderTop: advisoryMode ? "none" : "1px solid var(--color-border)",
           background: "var(--color-card)",
           padding: "var(--space-4) var(--space-8) var(--space-6)",
         }}>
