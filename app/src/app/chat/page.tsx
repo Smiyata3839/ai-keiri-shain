@@ -628,7 +628,7 @@ export default function ChatPage() {
               justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
               marginBottom: "var(--space-5)",
             }}>
-              <div style={{ maxWidth: "560px" }}>
+              <div style={{ maxWidth: "670px" }}>
                 <div style={{
                   fontSize: "11px", fontWeight: "500",
                   color: "var(--color-text-muted)",
@@ -743,6 +743,38 @@ export default function ChatPage() {
               }}>
                 考え中...
               </div>
+            </div>
+          )}
+          {/* 第1段階完了後の続行ボタン */}
+          {advisoryMode && advisoryPhase === "diagnosis" && !loading && (
+            <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: "var(--space-5)" }}>
+              <button
+                onClick={() => sendMessage("戦略分析に進めてください")}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "var(--radius-lg)",
+                  border: "1px solid rgba(99,102,241,0.3)",
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.06) 100%)",
+                  color: "var(--color-primary)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-sans)",
+                  display: "flex", alignItems: "center", gap: "8px",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(59,130,246,0.12) 100%)";
+                  e.currentTarget.style.borderColor = "var(--color-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.06) 100%)";
+                  e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)";
+                }}
+              >
+                <ChevronRight size={16} />
+                第2段階：戦略分析に進む
+              </button>
             </div>
           )}
           <div ref={messagesEndRef} />
