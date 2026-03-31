@@ -155,7 +155,7 @@ export default function DashboardPage() {
   const cardStyle: React.CSSProperties = {
     background: "var(--color-card)",
     borderRadius: "var(--radius-card)",
-    padding: "48px 32px 32px",
+    padding: "88px 32px 32px",
     boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
     border: "1px solid var(--color-border)",
     marginBottom: "20px",
