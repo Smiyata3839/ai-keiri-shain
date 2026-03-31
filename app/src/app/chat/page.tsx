@@ -2,8 +2,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft, Search, X } from "lucide-react";
+import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft, Search, X, ShieldCheck, Zap, AlertTriangle, BarChart2, BookOpen, Wallet, ArrowUpRight, ClipboardList } from "lucide-react";
 import { OWNER_TYPES, type OwnerType } from "@/lib/owner-types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type Message = {
   id?: string;
@@ -374,10 +376,10 @@ export default function ChatPage() {
             <div style={{ textAlign: "center", marginBottom: "16px" }}>
               <span style={{
                 display: "inline-block", padding: "3px 12px", borderRadius: "16px",
-                background: "rgba(59,109,240,0.1)", color: "var(--color-primary)",
+                background: "rgba(13,148,136,0.1)", color: "#0d9488",
                 fontSize: "12px", fontWeight: "700", letterSpacing: "2px",
               }}>{ownerType.code}</span>
-              <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-primary)", margin: "8px 0 2px 0" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#0d9488", margin: "8px 0 2px 0" }}>
                 {ownerType.name}
               </h3>
               <p style={{ fontSize: "12px", color: "var(--color-text-muted)", margin: 0 }}>{ownerType.title}</p>
@@ -386,7 +388,7 @@ export default function ChatPage() {
               {ownerType.description}
             </p>
             <div style={{ marginBottom: "12px" }}>
-              <p style={{ fontSize: "11px", fontWeight: "700", color: "#059669", margin: "0 0 6px 0" }}>強み</p>
+              <p style={{ fontSize: "11px", fontWeight: "700", color: "#0d9488", margin: "0 0 6px 0" }}>強み</p>
               {ownerType.strengths.map((s, i) => (
                 <p key={i} style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: "0 0 4px 0", paddingLeft: "10px", textIndent: "-10px" }}>
                   + {s}
@@ -394,7 +396,7 @@ export default function ChatPage() {
               ))}
             </div>
             <div style={{ marginBottom: "12px" }}>
-              <p style={{ fontSize: "11px", fontWeight: "700", color: "#dc2626", margin: "0 0 6px 0" }}>注意点</p>
+              <p style={{ fontSize: "11px", fontWeight: "700", color: "rgba(13,148,136,0.7)", margin: "0 0 6px 0" }}>注意点</p>
               {ownerType.weaknesses.map((w, i) => (
                 <p key={i} style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: "0 0 4px 0", paddingLeft: "10px", textIndent: "-10px" }}>
                   ! {w}
@@ -402,7 +404,7 @@ export default function ChatPage() {
               ))}
             </div>
             <div>
-              <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 6px 0" }}>KANBEI対応方針</p>
+              <p style={{ fontSize: "11px", fontWeight: "700", color: "rgba(13,148,136,0.5)", margin: "0 0 6px 0" }}>KANBEI対応方針</p>
               <p style={{ fontSize: "12px", lineHeight: "1.6", color: "var(--color-text)", margin: 0 }}>
                 {ownerType.communicationStyle}
               </p>
@@ -440,7 +442,7 @@ export default function ChatPage() {
           <div style={{ padding: "16px" }}>
             {profileItems.map((item, i) => (
               <div key={i} style={{ marginBottom: "14px" }}>
-                <p style={{ fontSize: "11px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 4px 0" }}>
+                <p style={{ fontSize: "11px", fontWeight: "700", color: "#0d9488", margin: "0 0 4px 0" }}>
                   {item.label}
                 </p>
                 <p style={{ fontSize: "13px", lineHeight: "1.6", color: "var(--color-text)", margin: 0 }}>
@@ -484,7 +486,7 @@ export default function ChatPage() {
                     </p>
                   )}
                   {s.action_items && (
-                    <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#dc2626", margin: 0, whiteSpace: "pre-wrap" }}>
+                    <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#0d9488", margin: 0, whiteSpace: "pre-wrap" }}>
                       {s.action_items}
                     </p>
                   )}
@@ -519,7 +521,7 @@ export default function ChatPage() {
                   </p>
                 )}
                 {s.owner_type_evaluation && (
-                  <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#7c3aed", margin: 0, whiteSpace: "pre-wrap" }}>
+                  <p style={{ fontSize: "11px", lineHeight: "1.5", color: "#0d9488", margin: 0, whiteSpace: "pre-wrap" }}>
                     {s.owner_type_evaluation}
                   </p>
                 )}
@@ -560,8 +562,8 @@ export default function ChatPage() {
               color: "var(--color-text)", lineHeight: "1.4",
             }}>チャット</h2>
             <p style={{
-              margin: "2px 0 0", fontSize: "12px",
-              color: "var(--color-text-muted)",
+              margin: "2px 0 0", fontSize: "12px", fontWeight: "600",
+              color: "var(--color-text-secondary)",
             }}>KANBEI</p>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -577,7 +579,7 @@ export default function ChatPage() {
                 fontFamily: "var(--font-sans)",
                 transition: "border-color 0.15s",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--color-primary)"; e.currentTarget.style.color = "var(--color-primary)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#0d9488"; e.currentTarget.style.color = "#0d9488"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--color-border)"; e.currentTarget.style.color = "var(--color-text-secondary)"; }}
             >
               <Plus size={14} strokeWidth={1.75} />
@@ -589,8 +591,8 @@ export default function ChatPage() {
                 display: "flex", alignItems: "center", gap: "4px",
                 padding: "6px 12px", borderRadius: "var(--radius-sm)",
                 border: "1px solid var(--color-border)",
-                background: syncOpen ? "rgba(59,109,240,0.08)" : "var(--color-background)",
-                color: syncOpen ? "var(--color-primary)" : "var(--color-text-secondary)",
+                background: syncOpen ? "rgba(13,148,136,0.08)" : "var(--color-background)",
+                color: syncOpen ? "#0d9488" : "var(--color-text-secondary)",
                 fontSize: "12.5px", cursor: "pointer",
                 fontFamily: "var(--font-sans)",
                 fontWeight: syncOpen ? "600" : "400",
@@ -628,10 +630,10 @@ export default function ChatPage() {
               justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
               marginBottom: "var(--space-5)",
             }}>
-              <div style={{ maxWidth: "670px" }}>
+              <div style={{ maxWidth: "760px" }}>
                 <div style={{
-                  fontSize: "11px", fontWeight: "500",
-                  color: "var(--color-text-muted)",
+                  fontSize: "12px", fontWeight: "600",
+                  color: "var(--color-text-secondary)",
                   marginBottom: "var(--space-1)",
                   textAlign: msg.role === "user" ? "right" : "left",
                   paddingLeft: msg.role === "assistant" ? "var(--space-1)" : "0",
@@ -652,9 +654,115 @@ export default function ChatPage() {
                   lineHeight: "1.75",
                   border: msg.role === "assistant" ? "1px solid var(--color-border)" : "none",
                   boxShadow: "var(--shadow-xs)",
-                  whiteSpace: "pre-wrap",
                 }}>
-                  {msg.content}
+                  {msg.role === "user" ? (
+                    <span style={{ whiteSpace: "pre-wrap" }}>{msg.content}</span>
+                  ) : (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => (
+                          <p style={{ margin: "0 0 0.75em 0", lineHeight: "1.75" }}>{children}</p>
+                        ),
+                        table: ({ children }) => (
+                          <table style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            fontSize: "13px",
+                            margin: "0.75em 0",
+                          }}>{children}</table>
+                        ),
+                        th: ({ children }) => (
+                          <th style={{
+                            background: "var(--color-surface)",
+                            padding: "6px 12px",
+                            borderBottom: "2px solid var(--color-border)",
+                            textAlign: "left",
+                            fontWeight: 600,
+                            color: "var(--color-text)",
+                          }}>{children}</th>
+                        ),
+                        td: ({ children }) => (
+                          <td style={{
+                            padding: "6px 12px",
+                            borderBottom: "1px solid var(--color-border)",
+                            color: "var(--color-text)",
+                            lineHeight: "1.6",
+                          }}>{children}</td>
+                        ),
+                        h3: ({ children }) => {
+                          const text = String(children).replace(
+                            /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+                            ""
+                          ).trim();
+                          const iconMap: { keywords: string[]; icon: React.ReactNode }[] = [
+                            { keywords: ["収益", "粗利", "利益", "売上"], icon: <TrendingUp size={15} strokeWidth={1.5} /> },
+                            { keywords: ["安全", "流動", "自己資本"], icon: <ShieldCheck size={15} strokeWidth={1.5} /> },
+                            { keywords: ["効率", "成長", "回転"], icon: <Zap size={15} strokeWidth={1.5} /> },
+                            { keywords: ["BEP", "損益分岐", "固定費"], icon: <BarChart2 size={15} strokeWidth={1.5} /> },
+                            { keywords: ["課題", "問題", "リスク"], icon: <AlertTriangle size={15} strokeWidth={1.5} /> },
+                            { keywords: ["戦略", "SWOT", "3C", "PPM", "5F"], icon: <ClipboardList size={15} strokeWidth={1.5} /> },
+                            { keywords: ["アクション", "施策", "次の一手"], icon: <Target size={15} strokeWidth={1.5} /> },
+                            { keywords: ["資金", "キャッシュ", "銀行", "バーンレート"], icon: <Wallet size={15} strokeWidth={1.5} /> },
+                            { keywords: ["売掛", "入金", "回収"], icon: <ArrowUpRight size={15} strokeWidth={1.5} /> },
+                            { keywords: ["KPI", "指標", "推移"], icon: <BookOpen size={15} strokeWidth={1.5} /> },
+                          ];
+                          const matched = iconMap.find(({ keywords }) =>
+                            keywords.some((kw) => text.includes(kw))
+                          );
+                          return (
+                            <h3 style={{
+                              fontSize: "13px",
+                              fontWeight: 700,
+                              margin: "1.2em 0 0.5em",
+                              color: "var(--color-text)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                            }}>
+                              {matched && (
+                                <span style={{ color: "var(--color-text-muted)", flexShrink: 0 }}>
+                                  {matched.icon}
+                                </span>
+                              )}
+                              {text}
+                            </h3>
+                          );
+                        },
+                        ul: ({ children }) => (
+                          <ul style={{
+                            paddingLeft: "1.4em",
+                            margin: "0.4em 0",
+                            lineHeight: "1.75",
+                          }}>{children}</ul>
+                        ),
+                        li: ({ children }) => (
+                          <li style={{ marginBottom: "0.25em" }}>{children}</li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong style={{ fontWeight: 600, color: "var(--color-text)" }}>{children}</strong>
+                        ),
+                        code: ({ children }) => (
+                          <code style={{
+                            background: "var(--color-surface)",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            fontFamily: "monospace",
+                          }}>{children}</code>
+                        ),
+                        hr: () => (
+                          <hr style={{
+                            border: "none",
+                            borderTop: "1px dashed var(--color-border)",
+                            margin: "1em 0",
+                          }} />
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
                 {msg.role === "assistant" && i > 0 && (
                   <div style={{ marginTop: "6px", paddingLeft: "var(--space-1)" }}>
@@ -681,7 +789,7 @@ export default function ChatPage() {
                           style={{
                             padding: "6px 12px", fontSize: "11px", fontWeight: "600",
                             border: "none", borderRadius: "8px", cursor: "pointer",
-                            background: "var(--color-primary)", color: "white",
+                            background: "#0d9488", color: "white",
                             fontFamily: "var(--font-sans)",
                           }}
                         >
@@ -753,9 +861,9 @@ export default function ChatPage() {
                 style={{
                   padding: "10px 20px",
                   borderRadius: "var(--radius-lg)",
-                  border: "1px solid rgba(99,102,241,0.3)",
-                  background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.06) 100%)",
-                  color: "var(--color-primary)",
+                  border: "1px solid rgba(13,148,136,0.3)",
+                  background: "linear-gradient(135deg, rgba(13,148,136,0.08) 0%, rgba(13,148,136,0.06) 100%)",
+                  color: "#0d9488",
                   fontSize: "13px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -764,12 +872,12 @@ export default function ChatPage() {
                   transition: "all 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(59,130,246,0.12) 100%)";
-                  e.currentTarget.style.borderColor = "var(--color-primary)";
+                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(13,148,136,0.15) 0%, rgba(13,148,136,0.12) 100%)";
+                  e.currentTarget.style.borderColor = "#0d9488";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(59,130,246,0.06) 100%)";
-                  e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)";
+                  e.currentTarget.style.background = "linear-gradient(135deg, rgba(13,148,136,0.08) 0%, rgba(13,148,136,0.06) 100%)";
+                  e.currentTarget.style.borderColor = "rgba(13,148,136,0.3)";
                 }}
               >
                 <ChevronRight size={16} />
@@ -785,15 +893,15 @@ export default function ChatPage() {
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "10px 24px",
-            background: "linear-gradient(90deg, rgba(99,102,241,0.10) 0%, rgba(59,130,246,0.08) 100%)",
-            borderTop: "1px solid rgba(99,102,241,0.25)",
-            borderBottom: "1px solid rgba(99,102,241,0.25)",
+            background: "linear-gradient(90deg, rgba(13,148,136,0.10) 0%, rgba(13,148,136,0.08) 100%)",
+            borderTop: "1px solid rgba(13,148,136,0.25)",
+            borderBottom: "1px solid rgba(13,148,136,0.25)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Search size={16} style={{ color: "var(--color-primary)" }} />
+              <Search size={16} style={{ color: "#0d9488" }} />
               <span style={{
                 fontSize: "13px", fontWeight: 600,
-                color: "var(--color-primary)", fontFamily: "var(--font-sans)",
+                color: "#0d9488", fontFamily: "var(--font-sans)",
               }}>
                 経営診断モード
               </span>
@@ -852,8 +960,8 @@ export default function ChatPage() {
                     lineHeight: "1.5",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--color-primary)";
-                    e.currentTarget.style.color = "var(--color-primary)";
+                    e.currentTarget.style.borderColor = "#0d9488";
+                    e.currentTarget.style.color = "#0d9488";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = "var(--color-border)";
@@ -871,7 +979,7 @@ export default function ChatPage() {
             <div style={{
               flex: 1,
               borderRadius: "var(--radius-lg)",
-              border: inputFocused ? "1px solid var(--color-primary)" : "1px solid var(--color-border)",
+              border: inputFocused ? "1px solid #0d9488" : "1px solid var(--color-border)",
               boxShadow: inputFocused ? "var(--shadow-ring)" : "var(--shadow-sm)",
               background: "white",
               transition: "border-color 0.15s, box-shadow 0.15s",
@@ -901,7 +1009,7 @@ export default function ChatPage() {
               style={{
                 width: "42px", height: "42px",
                 borderRadius: "var(--radius-lg)",
-                background: input.trim() ? "var(--color-primary)" : "var(--color-border)",
+                background: input.trim() ? "#0d9488" : "var(--color-border)",
                 color: "white",
                 border: "none", cursor: input.trim() ? "pointer" : "default",
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -918,7 +1026,7 @@ export default function ChatPage() {
       {/* KANBEI Sync パネル（右側） */}
       {syncOpen && (
         <div style={{
-          width: "360px", flexShrink: 0,
+          width: "420px", flexShrink: 0,
           borderLeft: "1px solid var(--color-border)",
           background: "var(--color-card)",
           display: "flex", flexDirection: "column",
@@ -929,12 +1037,12 @@ export default function ChatPage() {
           <div style={{
             padding: "16px",
             borderBottom: "1px solid var(--color-border)",
-            background: "rgba(59,109,240,0.03)",
+            background: "rgba(13,148,136,0.03)",
           }}>
-            <h3 style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-primary)", margin: 0 }}>
+            <h3 style={{ fontSize: "14px", fontWeight: "700", color: "#0d9488", margin: 0 }}>
               KANBEI Sync
             </h3>
-            <p style={{ fontSize: "11px", color: "var(--color-text-muted)", margin: "2px 0 0 0" }}>
+            <p style={{ fontSize: "11px", color: "rgba(13,148,136,0.7)", margin: "2px 0 0 0" }}>
               経営者に寄り添うAIエンジン
             </p>
           </div>
@@ -954,9 +1062,9 @@ export default function ChatPage() {
                   style={{
                     flex: 1, padding: "10px 4px",
                     border: "none",
-                    borderBottom: isActive ? "2px solid var(--color-primary)" : "2px solid transparent",
+                    borderBottom: isActive ? "2px solid #0d9488" : "2px solid transparent",
                     background: "transparent",
-                    color: isActive ? "var(--color-primary)" : "var(--color-text-muted)",
+                    color: isActive ? "#0d9488" : "var(--color-text-muted)",
                     cursor: "pointer",
                     display: "flex", flexDirection: "column", alignItems: "center", gap: "3px",
                     fontSize: "10px", fontWeight: isActive ? "600" : "400",

@@ -124,7 +124,7 @@ export default function AnnualSummaryPage() {
               padding: "10px 24px",
               borderRadius: "var(--radius-button)",
               border: "none",
-              background: generating ? "#ccc" : "var(--color-primary)",
+              background: generating ? "#ccc" : "#0d9488",
               color: "white",
               fontSize: "14px",
               fontWeight: "600",
@@ -157,7 +157,7 @@ export default function AnnualSummaryPage() {
 
               {s.financial_summary && (
                 <div style={cardStyle}>
-                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 12px 0" }}>
+                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#0d9488", margin: "0 0 12px 0" }}>
                     財務実績
                   </h4>
                   <p style={{ fontSize: "14px", lineHeight: "1.8", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>
@@ -168,7 +168,7 @@ export default function AnnualSummaryPage() {
 
               {s.key_decisions && (
                 <div style={cardStyle}>
-                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#059669", margin: "0 0 12px 0" }}>
+                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#0d9488", margin: "0 0 12px 0" }}>
                     重要な決定事項
                   </h4>
                   <p style={{ fontSize: "14px", lineHeight: "1.8", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>
@@ -179,7 +179,7 @@ export default function AnnualSummaryPage() {
 
               {s.chat_insights && (
                 <div style={cardStyle}>
-                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#d97706", margin: "0 0 12px 0" }}>
+                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#0d9488", margin: "0 0 12px 0" }}>
                     チャットからの学び
                   </h4>
                   <p style={{ fontSize: "14px", lineHeight: "1.8", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>
@@ -190,7 +190,7 @@ export default function AnnualSummaryPage() {
 
               {s.owner_type_evaluation && (
                 <div style={cardStyle}>
-                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#7c3aed", margin: "0 0 12px 0" }}>
+                  <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#0d9488", margin: "0 0 12px 0" }}>
                     経営者タイプ評価
                   </h4>
                   <p style={{ fontSize: "14px", lineHeight: "1.8", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>

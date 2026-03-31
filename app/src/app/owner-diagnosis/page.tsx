@@ -102,7 +102,7 @@ export default function OwnerDiagnosisPage() {
             <p style={{ fontSize: "14px", color: "var(--color-text-secondary)", margin: "0 0 8px 0" }}>
               あなたの経営者タイプは
             </p>
-            <h1 style={{ fontSize: "36px", fontWeight: "800", color: "var(--color-primary)", margin: "0 0 4px 0" }}>
+            <h1 style={{ fontSize: "36px", fontWeight: "800", color: "#0d9488", margin: "0 0 4px 0" }}>
               {result.name}
             </h1>
             <p style={{ fontSize: "16px", color: "var(--color-text-secondary)", margin: "0 0 8px 0" }}>
@@ -112,8 +112,8 @@ export default function OwnerDiagnosisPage() {
               display: "inline-block",
               padding: "4px 16px",
               borderRadius: "20px",
-              background: "rgba(59,109,240,0.1)",
-              color: "var(--color-primary)",
+              background: "rgba(13,148,136,0.1)",
+              color: "#0d9488",
               fontSize: "18px",
               fontWeight: "700",
               letterSpacing: "4px",
@@ -145,7 +145,7 @@ export default function OwnerDiagnosisPage() {
             border: "1px solid var(--color-border)",
             marginBottom: "20px",
           }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#059669", margin: "0 0 16px 0" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#0d9488", margin: "0 0 16px 0" }}>
               強み
             </h3>
             {result.strengths.map((s, i) => (
@@ -165,12 +165,12 @@ export default function OwnerDiagnosisPage() {
             border: "1px solid var(--color-border)",
             marginBottom: "20px",
           }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#dc2626", margin: "0 0 16px 0" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "rgba(13,148,136,0.7)", margin: "0 0 16px 0" }}>
               注意点
             </h3>
             {result.weaknesses.map((w, i) => (
               <div key={i} style={{ display: "flex", gap: "10px", marginBottom: i < result.weaknesses.length - 1 ? "12px" : 0 }}>
-                <span style={{ color: "#dc2626", fontWeight: "700", flexShrink: 0 }}>!</span>
+                <span style={{ color: "rgba(13,148,136,0.7)", fontWeight: "700", flexShrink: 0 }}>!</span>
                 <p style={{ fontSize: "14px", lineHeight: "1.7", color: "var(--color-text)", margin: 0 }}>{w}</p>
               </div>
             ))}
@@ -185,7 +185,7 @@ export default function OwnerDiagnosisPage() {
             border: "1px solid var(--color-border)",
             marginBottom: "32px",
           }}>
-            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 12px 0" }}>
+            <h3 style={{ fontSize: "16px", fontWeight: "700", color: "rgba(13,148,136,0.5)", margin: "0 0 12px 0" }}>
               KANBEIの対応方針
             </h3>
             <p style={{ fontSize: "14px", lineHeight: "1.8", color: "var(--color-text)", margin: 0 }}>
@@ -237,7 +237,7 @@ export default function OwnerDiagnosisPage() {
             <div style={{
               width: `${((step + 1) / totalQuestions) * 100}%`,
               height: "100%", borderRadius: "2px",
-              background: "var(--color-primary)",
+              background: "#0d9488",
               transition: "width 0.3s ease",
             }} />
           </div>
@@ -271,8 +271,8 @@ export default function OwnerDiagnosisPage() {
                 fontFamily: "var(--font-sans)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-primary)";
-                e.currentTarget.style.boxShadow = "0 4px 20px rgba(59,109,240,0.15)";
+                e.currentTarget.style.borderColor = "#0d9488";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(13,148,136,0.15)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = "var(--color-border)";

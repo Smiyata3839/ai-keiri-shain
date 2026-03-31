@@ -13,7 +13,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
       <Sidebar />
-      <div style={{ marginLeft: "360px", flex: 1 }}>
+      <div style={{ marginLeft: "280px", flex: 1 }}>
         {children}
       </div>
     </div>

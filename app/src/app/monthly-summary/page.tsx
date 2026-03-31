@@ -132,7 +132,7 @@ export default function MonthlySummaryPage() {
               padding: "10px 24px",
               borderRadius: "var(--radius-button)",
               border: "none",
-              background: generating ? "#ccc" : "var(--color-primary)",
+              background: generating ? "#ccc" : "#0d9488",
               color: "white",
               fontSize: "14px",
               fontWeight: "600",
@@ -174,7 +174,7 @@ export default function MonthlySummaryPage() {
 
                 {s.financial_summary && (
                   <div style={{ marginBottom: "14px" }}>
-                    <p style={{ fontSize: "12px", fontWeight: "700", color: "var(--color-primary)", margin: "0 0 4px 0" }}>財務</p>
+                    <p style={{ fontSize: "12px", fontWeight: "700", color: "#0d9488", margin: "0 0 4px 0" }}>財務</p>
                     <p style={{ fontSize: "14px", lineHeight: "1.7", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>
                       {s.financial_summary}
                     </p>
@@ -183,7 +183,7 @@ export default function MonthlySummaryPage() {
 
                 {s.chat_insights && (
                   <div style={{ marginBottom: "14px" }}>
-                    <p style={{ fontSize: "12px", fontWeight: "700", color: "#d97706", margin: "0 0 4px 0" }}>学び</p>
+                    <p style={{ fontSize: "12px", fontWeight: "700", color: "#0d9488", margin: "0 0 4px 0" }}>学び</p>
                     <p style={{ fontSize: "14px", lineHeight: "1.7", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>
                       {s.chat_insights}
                     </p>
@@ -192,7 +192,7 @@ export default function MonthlySummaryPage() {
 
                 {s.action_items && (
                   <div>
-                    <p style={{ fontSize: "12px", fontWeight: "700", color: "#dc2626", margin: "0 0 4px 0" }}>アクション</p>
+                    <p style={{ fontSize: "12px", fontWeight: "700", color: "#0d9488", margin: "0 0 4px 0" }}>アクション</p>
                     <p style={{ fontSize: "14px", lineHeight: "1.7", color: "var(--color-text)", margin: 0, whiteSpace: "pre-wrap" }}>
                       {s.action_items}
                     </p>

@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   MessageSquare,
   LayoutDashboard,
@@ -26,6 +27,13 @@ import {
   Bell,
   X,
   Settings,
+  Home,
+  ClipboardList,
+  Calculator,
+  Coins,
+  Sparkles,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -44,12 +52,15 @@ type MenuItem = {
 
 type MenuGroup = {
   label: string;
+  icon: LucideIcon;
+  isSync?: boolean;
   items: MenuItem[];
 };
 
 const menuGroups: MenuGroup[] = [
   {
     label: "メイン",
+    icon: Home,
     items: [
       { icon: MessageSquare, label: "チャット", path: "/chat" },
       { icon: LayoutDashboard, label: "ダッシュボード", path: "/dashboard" },
@@ -57,6 +68,7 @@ const menuGroups: MenuGroup[] = [
   },
   {
     label: "受発注",
+    icon: ClipboardList,
     items: [
       { icon: FilePlus, label: "請求書発行", path: "/invoices/new" },
       { icon: FileText, label: "請求書一覧", path: "/invoices" },
@@ -65,6 +77,7 @@ const menuGroups: MenuGroup[] = [
   },
   {
     label: "会計",
+    icon: Calculator,
     items: [
       { icon: Landmark, label: "銀行明細取込", path: "/bank" },
       { icon: BookOpen, label: "仕訳一覧", path: "/journals" },
@@ -76,19 +89,28 @@ const menuGroups: MenuGroup[] = [
   },
   {
     label: "経費",
+    icon: Coins,
     items: [
       { icon: Receipt, label: "領収書アップロード", path: "/receipts" },
     ],
   },
   {
+    label: "KANBEI Sync",
+    icon: Sparkles,
+    isSync: true,
+    items: [
+      { icon: Building2, label: "会社プロファイル", path: "/company-profile" },
+      { icon: Brain, label: "経営者診断", path: "/owner-diagnosis" },
+      { icon: CalendarDays, label: "月次要約", path: "/monthly-summary" },
+      { icon: CalendarCheck, label: "年次要約", path: "/annual-summary" },
+    ],
+  },
+  {
     label: "設定",
+    icon: Settings,
     items: [
       { icon: Users, label: "顧客管理", path: "/customers" },
       { icon: Building2, label: "自社情報", path: "/company" },
-      { icon: Building2, label: "会社プロファイル", path: "/company-profile" },
-      { icon: Brain, label: "経営者診断", path: "/owner-diagnosis" },
-      { icon: CalendarCheck, label: "年次要約", path: "/annual-summary" },
-      { icon: CalendarDays, label: "月次要約", path: "/monthly-summary" },
     ],
   },
 ];
@@ -103,7 +125,18 @@ export function Sidebar({ className }: { className?: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [showPanel, setShowPanel] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [openGroups, setOpenGroups] = useState<string[]>(["メイン"]);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev =>
+      prev.includes(label)
+        ? prev.filter(g => g !== label)
+        : [...prev, label]
+    );
+  };
 
   const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
 
@@ -111,6 +144,7 @@ export function Sidebar({ className }: { className?: string }) {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      if (user.email) setUserEmail(user.email);
       const { data: company } = await supabase
         .from("companies").select("id, logo_url").eq("user_id", user.id).single();
       if (company) {
@@ -159,6 +193,26 @@ export function Sidebar({ className }: { className?: string }) {
     e.target.value = "";
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("画像サイズは2MB以内にしてください");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      alert("JPG・PNG・WebP形式のみ対応しています");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setAvatarUrl(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
@@ -168,8 +222,8 @@ export function Sidebar({ className }: { className?: string }) {
     <div
       className={className}
       style={{
-        width: "360px",
-        minWidth: "360px",
+        width: "280px",
+        minWidth: "280px",
         background: "var(--color-sidebar)",
         color: "white",
         display: "flex",
@@ -181,120 +235,118 @@ export function Sidebar({ className }: { className?: string }) {
         overflowY: "auto",
       }}
     >
-      {/* キャラクターロゴ */}
-      <div
-        style={{
-          padding: "var(--space-6) var(--space-6) var(--space-4)",
-          borderBottom: "1px solid var(--color-sidebar-border)",
+      {/* 上部エリア */}
+      <div style={{
+        position: "relative",
+        padding: "20px var(--space-4) 0",
+        marginBottom: "var(--space-6)",
+        borderBottom: "1px solid var(--color-sidebar-border)",
+        paddingBottom: "var(--space-4)",
+      }}>
+        {/* 右上のアクションアイコン */}
+        <div style={{
+          position: "absolute",
+          top: "15px",
+          right: "15px",
           display: "flex",
-          flexDirection: "column",
+          gap: "8px",
           alignItems: "center",
-          gap: "var(--space-2)",
-        }}
-      >
-        {/* アバター + 右側アクションアイコン */}
-        <div style={{ position: "relative" }}>
+        }}>
+          {/* ベル通知 */}
+          <div
+            style={{ position: "relative", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); setShowPanel((v) => !v); }}
+          >
+            <Bell size={20} color="rgba(255,255,255,0.55)" />
+            {unreadCount > 0 && (
+              <div style={{
+                position: "absolute",
+                top: "-6px",
+                right: "-8px",
+                minWidth: "18px",
+                height: "18px",
+                borderRadius: "50%",
+                background: "#dc2626",
+                color: "white",
+                fontSize: "11px",
+                fontWeight: "700",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 4px",
+              }}>
+                {unreadCount}
+              </div>
+            )}
+          </div>
+          {/* 設定 */}
           <div
             style={{ cursor: "pointer" }}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => router.push("/company")}
           >
-            {logoUrl ? (
+            <Settings size={20} color="rgba(255,255,255,0.55)" />
+          </div>
+        </div>
+
+        {/* アバター（中央） */}
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+        }}>
+          <div style={{ position: "relative", cursor: "pointer" }}
+            onClick={() => document.getElementById("avatar-upload")?.click()}
+          >
+            {avatarUrl ? (
               <img
-                src={logoUrl}
-                alt="ロゴ"
-                width={120}
-                height={120}
+                src={avatarUrl}
+                alt="avatar"
                 style={{
+                  width: "88px",
+                  height: "88px",
                   borderRadius: "50%",
                   objectFit: "cover",
-                  width: "120px",
-                  height: "120px",
                 }}
               />
             ) : (
-              <Image
-                src="/logo.png"
-                alt="KANBEI"
-                width={120}
-                height={120}
-                style={{
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-                priority
-              />
+              <div style={{
+                width: "88px",
+                height: "88px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg, #3b6df0, #0d9488)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "32px",
+                fontWeight: "600",
+                color: "white",
+                flexShrink: 0,
+              }}>
+                {userEmail ? userEmail[0].toUpperCase() : "K"}
+              </div>
             )}
             <div style={{
               position: "absolute",
-              bottom: "4px",
-              left: "4px",
-              width: "28px",
-              height: "28px",
+              bottom: "2px",
+              right: "2px",
+              width: "24px",
+              height: "24px",
               borderRadius: "50%",
               background: "rgba(0,0,0,0.6)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}>
-              <Camera size={14} color="white" />
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={handleImageUpload}
-            />
-          </div>
-          {/* 右側にベル・設定を縦並び */}
-          <div style={{
-            position: "absolute",
-            right: "-32px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}>
-            {/* ベル通知 */}
-            <div
-              style={{ position: "relative", cursor: "pointer" }}
-              onClick={(e) => { e.stopPropagation(); setShowPanel((v) => !v); }}
-            >
-              <Bell size={20} color="rgba(255,255,255,0.55)" />
-              {unreadCount > 0 && (
-                <div style={{
-                  position: "absolute",
-                  top: "-6px",
-                  right: "-8px",
-                  minWidth: "18px",
-                  height: "18px",
-                  borderRadius: "50%",
-                  background: "#dc2626",
-                  color: "white",
-                  fontSize: "11px",
-                  fontWeight: "700",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "0 4px",
-                }}>
-                  {unreadCount}
-                </div>
-              )}
-            </div>
-            {/* 設定 */}
-            <div
-              style={{ cursor: "pointer" }}
-              onClick={() => router.push("/company")}
-            >
-              <Settings size={20} color="rgba(255,255,255,0.55)" />
+              <Camera size={13} color="white" />
             </div>
           </div>
+          <input
+            id="avatar-upload"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: "none" }}
+            onChange={handleAvatarChange}
+          />
         </div>
-        <span style={{ fontSize: "14px", fontWeight: "500", color: "rgba(255,255,255,0.7)" }}>
-          KANBEI
-        </span>
       </div>
 
       {/* 通知パネル */}
@@ -391,62 +443,102 @@ export function Sidebar({ className }: { className?: string }) {
 
       {/* メニュー */}
       <nav style={{ flex: 1, padding: "var(--space-4) var(--space-3)" }}>
-        {menuGroups.map((group) => (
-          <div key={group.label} style={{ marginBottom: "var(--space-6)" }}>
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: "500",
-                color: "rgba(255,255,255,0.3)",
-                padding: "0 var(--space-3) var(--space-2)",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-              }}
-            >
-              {group.label}
+        {menuGroups.map((group) => {
+          const GroupIcon = group.icon;
+          const isOpen = openGroups.includes(group.label);
+          const isSync = group.isSync;
+          return (
+            <div key={group.label} style={{
+              marginBottom: "4px",
+              ...(isSync ? {
+                borderTop: "1px solid rgba(13,148,136,0.2)",
+                borderBottom: "1px solid rgba(13,148,136,0.2)",
+                paddingTop: "4px",
+                paddingBottom: "4px",
+                marginTop: "4px",
+              } : {}),
+            }}>
+              {/* グループラベル（クリックで開閉） */}
+              <div
+                onClick={() => toggleGroup(group.label)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "12px var(--space-4)",
+                  cursor: "pointer",
+                  fontSize: "15px",
+                  fontWeight: "500",
+                  color: isSync ? "#0d9488" : "rgba(255,255,255,0.80)",
+                  letterSpacing: "0.02em",
+                  borderRadius: "var(--radius-md)",
+                  background: isOpen ? "rgba(255,255,255,0.04)" : "transparent",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = isOpen ? "rgba(255,255,255,0.04)" : "transparent";
+                }}
+              >
+                <GroupIcon size={14} strokeWidth={1.5} />
+                <span style={{ flex: 1 }}>{group.label}</span>
+                {isOpen ? <ChevronDown size={16} color="rgba(255,255,255,0.55)" /> : <ChevronRight size={16} color="rgba(255,255,255,0.55)" />}
+              </div>
+
+              {/* サブ項目（アコーディオン） */}
+              <div style={{
+                maxHeight: isOpen ? "500px" : "0",
+                overflow: "hidden",
+                transition: "max-height 0.25s ease",
+              }}>
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.path ||
+                    (item.path === "/invoices" && pathname?.startsWith("/invoices/") && pathname !== "/invoices/new");
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.path}
+                      onClick={() => router.push(item.path)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "var(--space-3)",
+                        padding: "8px var(--space-4)",
+                        paddingLeft: isActive ? "calc(var(--space-8) - 2px)" : "var(--space-8)",
+                        borderRadius: "var(--radius-md)",
+                        cursor: "pointer",
+                        marginBottom: "2px",
+                        borderLeft: isActive ? "2px solid #a5c0ff" : "2px solid transparent",
+                        background: isActive
+                          ? "var(--color-sidebar-active)"
+                          : "transparent",
+                        color: isActive ? "var(--color-sidebar-text-active)" : "rgba(255,255,255,0.65)",
+                        fontSize: "13px",
+                        fontWeight: isActive ? "500" : "400",
+                        transition: "background 0.15s, color 0.15s",
+                        lineHeight: "1.5",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive)
+                          e.currentTarget.style.background = "var(--color-sidebar-hover)";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive)
+                          e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <Icon size={16} strokeWidth={1.5} />
+                      <span>{item.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            {group.items.map((item) => {
-              const isActive =
-                pathname === item.path ||
-                (item.path === "/invoices" && pathname?.startsWith("/invoices/") && pathname !== "/invoices/new");
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.path}
-                  onClick={() => router.push(item.path)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--space-3)",
-                    padding: "var(--space-3) var(--space-4)",
-                    borderRadius: "var(--radius-md)",
-                    cursor: "pointer",
-                    marginBottom: "2px",
-                    background: isActive
-                      ? "var(--color-sidebar-active)"
-                      : "transparent",
-                    color: isActive ? "var(--color-sidebar-text-active)" : "var(--color-sidebar-text)",
-                    fontSize: "15px",
-                    fontWeight: isActive ? "500" : "400",
-                    transition: "background 0.15s, color 0.15s",
-                    lineHeight: "1.5",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive)
-                      e.currentTarget.style.background = "var(--color-sidebar-hover)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive)
-                      e.currentTarget.style.background = "transparent";
-                  }}
-                >
-                  <Icon size={18} strokeWidth={isActive ? 2 : 1.75} />
-                  <span>{item.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* ログアウト */}
@@ -457,7 +549,7 @@ export function Sidebar({ className }: { className?: string }) {
         }}
       >
         <div
-          onClick={handleLogout}
+          onClick={() => setShowLogoutConfirm(true)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -482,6 +574,116 @@ export function Sidebar({ className }: { className?: string }) {
           <span>ログアウト</span>
         </div>
       </div>
+
+      {/* KANBEIロゴ */}
+      <div style={{
+        padding: "var(--space-6) var(--space-4) 24px",
+        borderTop: "1px solid var(--color-sidebar-border)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+      }}>
+        <img
+          src="/logo-lp.png"
+          alt="KANBEI"
+          style={{
+            width: "64px",
+            height: "auto",
+            filter: "brightness(0) invert(1)",
+            opacity: 0.85,
+          }}
+        />
+        <div style={{
+          fontSize: "11px",
+          color: "rgba(255,255,255,0.55)",
+          letterSpacing: "0.04em",
+          textAlign: "center",
+          lineHeight: "1.6",
+          marginTop: "4px",
+          width: "100%",
+          paddingLeft: "var(--space-4)",
+          paddingRight: "var(--space-4)",
+        }}>
+          あなたの会社の経理参謀。
+        </div>
+      </div>
+
+      {/* ログアウト確認モーダル */}
+      {showLogoutConfirm && createPortal(
+        <div
+          onClick={() => setShowLogoutConfirm(false)}
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 99999,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--color-card)",
+              borderRadius: "12px",
+              padding: "28px 32px",
+              maxWidth: "360px",
+              width: "90%",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            }}
+          >
+            <p style={{
+              fontSize: "16px",
+              fontWeight: "600",
+              color: "var(--color-text)",
+              marginBottom: "8px",
+            }}>
+              ログアウトしますか？
+            </p>
+            <p style={{
+              fontSize: "13px",
+              color: "var(--color-text-secondary)",
+              marginBottom: "24px",
+            }}>
+              再度ログインが必要になります。
+            </p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-card)",
+                  color: "var(--color-text)",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#dc2626",
+                  color: "#fff",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                ログアウト
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

@@ -141,6 +141,11 @@ export default function DashboardPage() {
   const totalRevenue = useMemo(
     () => revenueData.reduce((s, d) => s + d.paid + d.overdue, 0), [revenueData]
   );
+  const totalPaid = revenueData.reduce((sum, d) => sum + (d.paid || 0), 0);
+  const totalOverdue = revenueData.reduce((sum, d) => sum + (d.overdue || 0), 0);
+  const paidRatio = (totalPaid + totalOverdue) > 0
+    ? (totalPaid / (totalPaid + totalOverdue)) * 100
+    : 0;
   const totalProfit = useMemo(
     () => profitData.reduce((s, d) => s + d.profit, 0), [profitData]
   );
@@ -150,110 +155,294 @@ export default function DashboardPage() {
   const cardStyle: React.CSSProperties = {
     background: "var(--color-card)",
     borderRadius: "var(--radius-card)",
-    padding: "28px",
+    padding: "48px 32px 32px",
     boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
     border: "1px solid var(--color-border)",
+    marginBottom: "20px",
   };
 
   return (
-    <div style={{ background: "var(--color-background)", minHeight: "100vh", padding: "40px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
+    <div style={{ background: "var(--color-background)", minHeight: "100vh", padding: "32px 40px" }}>
+        <div style={{ marginBottom: "32px" }}>
+          <h1 style={{
+            fontSize: "22px",
+            fontWeight: "700",
+            color: "var(--color-text)",
+            marginBottom: "4px",
+          }}>
             ダッシュボード
-          </h2>
-          {selectedYear && (
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              style={{
-                fontSize: "15px",
-                fontWeight: "600",
-                color: "var(--color-text)",
-                background: "var(--color-card)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "8px",
-                padding: "8px 14px",
-                cursor: "pointer",
-                outline: "none",
-              }}
-            >
-              {yearOptions.map((y) => (
-                <option key={y} value={y}>{y}年度</option>
-              ))}
-            </select>
-          )}
+          </h1>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+          }}>
+            <p style={{
+              color: "var(--color-text-secondary)",
+              fontSize: "13px",
+              margin: 0,
+            }}>
+              {selectedYear && !loading && (
+                <>
+                  起算日: {selectedYear}/{String(startMonth).padStart(2, "0")}/01
+                  ～ 決算日: {getFiscalMonths(selectedYear, startMonth)[11].end}
+                </>
+              )}
+            </p>
+            {selectedYear && (
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                style={{
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  color: "var(--color-text-secondary)",
+                  background: "var(--color-background)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "6px",
+                  padding: "4px 10px",
+                  cursor: "pointer",
+                  outline: "none",
+                }}
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}年度</option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
-        <p style={{ color: "var(--color-text-secondary)", marginBottom: "36px", fontSize: "15px" }}>
-          {user.email} でログイン中
-          {selectedYear && !loading && (
-            <span style={{ marginLeft: "16px", color: "var(--color-text-secondary)" }}>
-              ｜ 起算日: {selectedYear}/{String(startMonth).padStart(2, "0")}/01 ～ 決算日: {getFiscalMonths(selectedYear, startMonth)[11].end}
-            </span>
-          )}
-        </p>
 
         {loading ? (
           <p style={{ color: "var(--color-text-secondary)" }}>読み込み中...</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-            {/* 売上高グラフ */}
-            <div style={cardStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
-                  売上高
-                </h3>
-                <span style={{ fontSize: "28px", fontWeight: "700", color: "var(--color-text)" }}>
-                  {fmt(totalRevenue)}
-                </span>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={revenueData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <XAxis type="number" tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
-                  <YAxis type="category" dataKey="month" width={40} stroke="var(--color-text-secondary)" fontSize={12} />
-                  <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-                  <Legend />
-                  <Bar dataKey="paid" name="回収済み" stackId="a" fill="#4ade80" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="overdue" name="未回収" stackId="a" fill="#f87171" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+            {/* 売上高タイトル（カード外・左上） */}
+            <p style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "var(--color-text-secondary)",
+              marginBottom: "8px",
+            }}>
+              売上高
+            </p>
+
+            {/* 売上高カード */}
+            <div style={{
+              background: "var(--color-card)",
+              borderRadius: "12px",
+              border: "1px solid #e5e7eb",
+              marginBottom: "20px",
+              overflow: "hidden",
+              position: "relative" as const,
+            }}>
+              {/* 目盛り + バーエリア */}
+              {(() => {
+                const maxVal = Math.max(totalRevenue * 1.1, 1);
+                const stepVal = Math.ceil(maxVal / 4 / 500000) * 500000;
+                const ticks = [0, 1, 2, 3, 4].map(i => i * stepVal);
+                const totalBar = stepVal * 4;
+
+                return (
+                  <div>
+                    {/* 目盛りラベル（カード上辺と一体） */}
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "80%",
+                      padding: "16px 24px 8px",
+                    }}>
+                      {ticks.map((t) => (
+                        <span key={t} style={{
+                          fontSize: "10px",
+                          color: "var(--color-text-muted)",
+                        }}>
+                          {t === 0 ? "0" : `¥${(t / 10000).toFixed(0)}万`}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* プログレスバー（太め） */}
+                    <div style={{
+                      width: "80%",
+                      height: "48px",
+                      display: "flex",
+                      position: "relative" as const,
+                      overflow: "hidden",
+                      paddingLeft: "24px",
+                      boxSizing: "border-box" as const,
+                    }}>
+                      {/* 目盛り線 */}
+                      {ticks.slice(1, -1).map((t) => (
+                        <div key={t} style={{
+                          position: "absolute" as const,
+                          left: `${(t / totalBar) * 100}%`,
+                          top: 0,
+                          bottom: 0,
+                          width: "1px",
+                          background: "rgba(255,255,255,0.4)",
+                          zIndex: 1,
+                        }} />
+                      ))}
+                      {/* 未回収：斜線 */}
+                      <div style={{
+                        width: `${Math.min((totalOverdue / totalBar) * 100, 100)}%`,
+                        background: "repeating-linear-gradient(45deg, #f87171, #f87171 3px, #fecaca 3px, #fecaca 6px)",
+                        transition: "width 0.6s ease",
+                      }} />
+                      {/* 回収済み：teal */}
+                      <div style={{
+                        width: `${Math.min((totalPaid / totalBar) * 100, 100)}%`,
+                        background: "#0d9488",
+                        transition: "width 0.6s ease",
+                      }} />
+                    </div>
+
+                    {/* 合計金額（右側・バー中央揃え） */}
+                    <div style={{
+                      position: "absolute" as const,
+                      top: 0,
+                      bottom: 0,
+                      right: "20px",
+                      display: "flex",
+                      flexDirection: "column" as const,
+                      justifyContent: "center",
+                      textAlign: "right",
+                    }}>
+                      <div style={{
+                        fontSize: "32px",
+                        fontWeight: "700",
+                        color: "#0d9488",
+                        lineHeight: 1,
+                      }}>
+                        {fmt(totalRevenue)}
+                      </div>
+                      <div style={{
+                        fontSize: "13px",
+                        color: "var(--color-text-muted)",
+                        marginTop: "4px",
+                      }}>
+                        年間売上合計
+                      </div>
+                    </div>
+
+                    {/* ラベル */}
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "14px 16px 18px",
+                    }}>
+                      <div style={{ display: "flex", gap: "16px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <div style={{
+                            width: "8px", height: "8px",
+                            borderRadius: "2px",
+                            background: "repeating-linear-gradient(45deg, #f87171, #f87171 2px, #fecaca 2px, #fecaca 4px)",
+                          }} />
+                          <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>未回収</span>
+                          <span style={{ fontSize: "12px", fontWeight: "600", color: "#dc2626" }}>
+                            {fmt(totalOverdue)}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <div style={{
+                            width: "8px", height: "8px",
+                            borderRadius: "2px",
+                            background: "#0d9488",
+                          }} />
+                          <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>回収済み</span>
+                          <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--color-text)" }}>
+                            {fmt(totalPaid)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
+            {/* 純利益タイトル（カード外・左上） */}
+            <p style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "var(--color-text-secondary)",
+              marginBottom: "8px",
+            }}>
+              純利益
+            </p>
+
             {/* 純利益グラフ */}
-            <div style={cardStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "18px", fontWeight: "700", color: "var(--color-text)", margin: 0 }}>
-                  純利益
-                </h3>
-                <span style={{
-                  fontSize: "28px", fontWeight: "700",
-                  color: totalProfit >= 0 ? "#16a34a" : "#dc2626",
+            <div style={{ ...cardStyle, position: "relative" as const }}>
+              {/* 合計金額（右上絶対配置） */}
+              <div style={{
+                position: "absolute" as const,
+                top: "12px",
+                right: "20px",
+                textAlign: "right",
+              }}>
+                <div style={{
+                  fontSize: "32px",
+                  fontWeight: "700",
+                  color: totalProfit >= 0 ? "#0d9488" : "#dc2626",
+                  lineHeight: 1,
                 }}>
                   {totalProfit < 0 ? "-" : ""}{fmt(totalProfit)}
-                </span>
+                </div>
+                <div style={{
+                  fontSize: "13px",
+                  color: "var(--color-text-muted)",
+                  marginTop: "4px",
+                }}>
+                  年間純利益
+                </div>
               </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={profitData} margin={{ left: 10, right: 20 }}>
-                  <defs>
-                    <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4ade80" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#4ade80" stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month" stroke="var(--color-text-secondary)" fontSize={12} />
-                  <YAxis tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
-                  <Tooltip formatter={(v) => fmt(Number(v ?? 0))} />
-                  <ReferenceLine y={0} stroke="var(--color-text-secondary)" strokeDasharray="3 3" />
-                  <Area
-                    type="monotone"
-                    dataKey="profit"
-                    name="純利益"
-                    stroke="#4ade80"
-                    fill="url(#profitGrad)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {(() => {
+                const dataMax = Math.max(...profitData.map((d) => d.profit));
+                const dataMin = Math.min(...profitData.map((d) => d.profit));
+                const off = dataMax <= 0 ? 0 : dataMin >= 0 ? 1 : dataMax / (dataMax - dataMin);
+                return (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={profitData} margin={{ left: 10, right: 20 }}>
+                      <defs>
+                        <linearGradient id="profitGradSplit" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#0d9488" stopOpacity={0.15} />
+                          <stop offset={`${off * 100}%`} stopColor="#0d9488" stopOpacity={0.02} />
+                          <stop offset={`${off * 100}%`} stopColor="#dc2626" stopOpacity={0.02} />
+                          <stop offset="100%" stopColor="#dc2626" stopOpacity={0.12} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <YAxis tickFormatter={(v) => `¥${(v / 10000).toFixed(0)}万`} stroke="var(--color-text-secondary)" fontSize={12} />
+                      <Tooltip content={(props) => {
+                        const { active, payload: pl, label } = props;
+                        if (!active || !pl || !pl.length) return null;
+                        const val = Number(pl[0].value ?? 0);
+                        const isNeg = val < 0;
+                        return (
+                          <div style={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "6px", padding: "8px 12px", fontSize: "13px" }}>
+                            <div style={{ color: "var(--color-text-secondary)", marginBottom: "4px" }}>{label}</div>
+                            <div style={{ fontWeight: "600", color: isNeg ? "#dc2626" : "#0d9488" }}>
+                              <span style={{ color: "var(--color-text-secondary)", fontWeight: "400", marginRight: "6px" }}>純利益</span>
+                              {isNeg ? `-¥${Math.abs(val).toLocaleString("ja-JP")}` : fmt(val)}
+                            </div>
+                          </div>
+                        );
+                      }} />
+                      <XAxis dataKey="month" stroke="var(--color-text-secondary)" fontSize={12} />
+                      <ReferenceLine y={0} stroke="#0d9488" strokeDasharray="4 4" />
+                      <Area
+                        type="monotone"
+                        dataKey="profit"
+                        name="純利益"
+                        stroke="#0d9488"
+                        fill="url(#profitGradSplit)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                );
+              })()}
             </div>
           </div>
         )}
