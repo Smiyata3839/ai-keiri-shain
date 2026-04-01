@@ -103,6 +103,7 @@ export default function ChatPage() {
   const [advisoryPhase, setAdvisoryPhase] = useState<AdvisoryPhase>("idle");
 
   // KANBEI Sync state
+  const [isDemoUser, setIsDemoUser] = useState(false);
   const [syncOpen, setSyncOpen] = useState(true);
   const [syncTab, setSyncTab] = useState<SyncTab>("owner");
   const [ownerType, setOwnerType] = useState<OwnerType | null>(null);
@@ -116,6 +117,7 @@ export default function ChatPage() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
+      if (user.email === "demo@kanbei.jp") setIsDemoUser(true);
 
       const { data: company } = await supabase
         .from("companies")
@@ -213,7 +215,7 @@ export default function ChatPage() {
   };
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading || !sessionId) return;
+    if (isDemoUser || !text.trim() || loading || !sessionId) return;
     const userMessage: Message = { role: "user", content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -946,6 +948,7 @@ export default function ChatPage() {
               const Icon = kw.icon;
               return (
                 <button key={kw.label} onClick={() => sendMessage(kw.message)}
+                  disabled={isDemoUser}
                   style={{
                     padding: "6px 14px",
                     borderRadius: "var(--radius-sm)",
@@ -953,7 +956,8 @@ export default function ChatPage() {
                     background: "var(--color-background)",
                     color: "var(--color-text-secondary)",
                     fontSize: "12.5px",
-                    cursor: "pointer",
+                    cursor: isDemoUser ? "not-allowed" : "pointer",
+                    opacity: isDemoUser ? 0.5 : 1,
                     fontFamily: "var(--font-sans)",
                     display: "flex", alignItems: "center", gap: "6px",
                     transition: "background 0.15s, border-color 0.15s",
@@ -986,11 +990,12 @@ export default function ChatPage() {
             }}>
               <input
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { if (!isDemoUser) setInput(e.target.value); }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
-                placeholder="メッセージを入力..."
+                disabled={isDemoUser}
+                placeholder={isDemoUser ? "デモ画面ではチャットをご利用いただけません" : "メッセージを入力..."}
                 style={{
                   width: "100%",
                   padding: "var(--space-3) var(--space-4)",
@@ -1005,7 +1010,7 @@ export default function ChatPage() {
                 }}
               />
             </div>
-            <button onClick={() => sendMessage(input)} disabled={loading}
+            <button onClick={() => sendMessage(input)} disabled={loading || isDemoUser}
               style={{
                 width: "42px", height: "42px",
                 borderRadius: "var(--radius-lg)",
