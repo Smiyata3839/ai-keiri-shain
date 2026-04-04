@@ -17,6 +17,7 @@ type Company = {
   bank_account_type: string | null;
   bank_account_number: string | null;
   bank_account_holder: string | null;
+  seal_image_url: string | null;
 };
 
 type Customer = {
@@ -133,6 +134,9 @@ export default function InvoiceDetailPage() {
       <style>{`
         @media print {
           .no-print { display: none !important; }
+          .sidebar-wrapper,
+          .sidebar-fixed { display: none !important; }
+          .main-content { margin-left: 0 !important; }
           .print-area {
             margin: 0 !important;
             padding: 0 !important;
@@ -323,12 +327,37 @@ export default function InvoiceDetailPage() {
                 <div style={{ maxWidth: "48%" }}>
                   <div
                     style={{
-                      fontSize: "16px",
-                      fontWeight: "700",
+                      display: "inline-flex",
+                      alignItems: "flex-start",
                       marginBottom: "6px",
                     }}
                   >
-                    {company.name}
+                    <span style={{ fontSize: "16px", fontWeight: "700" }}>
+                      {company.name}
+                    </span>
+                    {company.seal_image_url && (
+                      <div style={{
+                        width: "72px",
+                        height: "72px",
+                        marginLeft: "-24px",
+                        marginTop: "-8px",
+                        background: "white",
+                        flexShrink: 0,
+                        mixBlendMode: "multiply",
+                        pointerEvents: "none",
+                      }}>
+                        <img
+                          src={company.seal_image_url}
+                          alt="角印"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            opacity: 0.85,
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   {company.invoice_registration_number && (
                     <div style={{ fontSize: "12px", marginBottom: "2px" }}>

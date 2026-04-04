@@ -95,6 +95,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 印刷時：サイドバー・通知パネル非表示・コンテンツ全幅 */
+@media print {
+  .sidebar-wrapper,
+  .sidebar-fixed { display: none !important; }
+  .main-content { margin-left: 0 !important; }
+}
+
 /* フォント強制適用 */
 body, * {
   font-family: var(--font-noto), var(--font-dm),

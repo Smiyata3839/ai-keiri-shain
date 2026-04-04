@@ -34,6 +34,9 @@ export default function CompanyPage() {
   const [bankAccountHolder, setBankAccountHolder] = useState("");
   const [formFiscalMonth, setFormFiscalMonth] = useState<number>(3);
 
+  const [sealUrl, setSealUrl] = useState("");
+  const [sealUploading, setSealUploading] = useState(false);
+
   const [userId, setUserId] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -72,6 +75,7 @@ export default function CompanyPage() {
         setBankAccountNumber(comp.bank_account_number ?? "");
         setBankAccountHolder(comp.bank_account_holder ?? "");
         setFormFiscalMonth(comp.fiscal_month ?? 3);
+        setSealUrl(comp.seal_image_url ?? "");
         setIsEditing(false);
       } else {
         setIsEditing(true);
@@ -158,6 +162,44 @@ export default function CompanyPage() {
     setIsEditing(false);
     setError("");
     setSuccess("");
+  };
+
+  const handleSealUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !companyId) return;
+    if (file.size > 2 * 1024 * 1024) { setError("画像サイズは2MB以内にしてください"); return; }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setError("JPG・PNG・WebP形式のみ対応しています"); return; }
+
+    setSealUploading(true);
+    setError("");
+    try {
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `seals/${companyId}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("company-assets").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(path);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const { error: dbErr } = await supabase.from("companies").update({ seal_image_url: publicUrl }).eq("id", companyId);
+      if (dbErr) throw dbErr;
+      setSealUrl(publicUrl);
+      setSuccess("角印を保存しました");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "角印のアップロードに失敗しました");
+    }
+    setSealUploading(false);
+  };
+
+  const handleSealDelete = async () => {
+    if (!companyId) return;
+    setSealUploading(true);
+    try {
+      await supabase.from("companies").update({ seal_image_url: null }).eq("id", companyId);
+      setSealUrl("");
+      setSuccess("角印を削除しました");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "角印の削除に失敗しました");
+    }
+    setSealUploading(false);
   };
 
   const disabled = !isEditing;
@@ -363,6 +405,61 @@ export default function CompanyPage() {
                   <input value={bankAccountHolder} onChange={(e) => setBankAccountHolder(e.target.value)} placeholder="カ）サンプル" disabled={disabled} style={currentInputStyle} />
                 </div>
               </div>
+            </div>
+
+            {/* 角印 */}
+            <div style={{
+              background: "var(--color-card)", borderRadius: "var(--radius-card)",
+              padding: "24px", marginBottom: "24px",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)", marginBottom: "4px" }}>角印</div>
+              <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", margin: "0 0 16px" }}>
+                請求書に表示される角印画像をアップロードしてください（JPG・PNG・WebP、2MB以内）
+              </p>
+              {sealUrl ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <div style={{
+                    width: "80px", height: "80px", border: "1px solid var(--color-border)",
+                    borderRadius: "8px", overflow: "hidden", background: "#fafafa",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <img src={sealUrl} alt="角印" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <label style={{
+                      padding: "6px 16px", borderRadius: "var(--radius-button)",
+                      border: "1px solid var(--color-border)", background: "white",
+                      color: "var(--color-text)", fontSize: "13px", fontWeight: "600",
+                      cursor: sealUploading ? "not-allowed" : "pointer", fontFamily: "var(--font-sans)",
+                      textAlign: "center",
+                    }}>
+                      {sealUploading ? "アップロード中..." : "変更"}
+                      <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handleSealUpload} disabled={sealUploading} />
+                    </label>
+                    <button onClick={handleSealDelete} disabled={sealUploading}
+                      style={{
+                        padding: "6px 16px", borderRadius: "var(--radius-button)",
+                        border: "1px solid #fca5a5", background: "#fef2f2",
+                        color: "#dc2626", fontSize: "13px", fontWeight: "600",
+                        cursor: sealUploading ? "not-allowed" : "pointer", fontFamily: "var(--font-sans)",
+                      }}>
+                      削除
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label style={{
+                  display: "inline-flex", alignItems: "center", gap: "8px",
+                  padding: "10px 20px", borderRadius: "var(--radius-button)",
+                  border: "1px dashed var(--color-border)", background: "#fafafa",
+                  color: "var(--color-text)", fontSize: "13px", fontWeight: "600",
+                  cursor: sealUploading ? "not-allowed" : "pointer", fontFamily: "var(--font-sans)",
+                }}>
+                  {sealUploading ? "アップロード中..." : "角印画像をアップロード"}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" style={{ display: "none" }} onChange={handleSealUpload} disabled={sealUploading} />
+                </label>
+              )}
             </div>
 
             {/* ボタン */}

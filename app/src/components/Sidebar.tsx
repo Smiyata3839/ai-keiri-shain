@@ -220,7 +220,7 @@ export function Sidebar({ className }: { className?: string }) {
 
   return (
     <div
-      className={className}
+      className={`sidebar-fixed ${className ?? ""}`}
       style={{
         width: "280px",
         minWidth: "280px",
@@ -349,19 +349,19 @@ export function Sidebar({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* 通知パネル */}
-      {showPanel && (
+      {/* 通知パネル（portalでbodyに描画し、全ページのヘッダーより上に表示） */}
+      {showPanel && createPortal(
         <div
           ref={panelRef}
           style={{
             position: "fixed",
-            left: "360px",
+            left: "280px",
             top: 0,
             width: "320px",
             height: "100vh",
-            background: "#1e293b",
-            borderLeft: "1px solid rgba(255,255,255,0.1)",
-            zIndex: 100,
+            background: "var(--color-sidebar)",
+            borderLeft: "1px solid var(--color-sidebar-border)",
+            zIndex: 99999,
             display: "flex",
             flexDirection: "column",
             boxShadow: "4px 0 24px rgba(0,0,0,0.3)",
@@ -438,7 +438,8 @@ export function Sidebar({ className }: { className?: string }) {
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* メニュー */}

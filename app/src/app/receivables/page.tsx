@@ -197,6 +197,7 @@ export default function ReceivablesPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const due = new Date(dateStr);
+    due.setHours(0, 0, 0, 0);
     const diff = Math.floor(
       (today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)
     );
