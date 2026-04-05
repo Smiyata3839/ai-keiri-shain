@@ -10,7 +10,7 @@ type Invoice = {
   due_date: string;
   status: string;
   total: number;
-  customers: { name: string }[] | { name: string } | null;
+  customers: { name: string; email: string | null }[] | { name: string; email: string | null } | null;
 };
 
 const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
@@ -41,6 +41,63 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<{ name: string; postal_code: string | null; address: string | null; phone: string | null; email: string | null } | null>(null);
+
+  // メール送信モーダル用
+  const [mailTarget, setMailTarget] = useState<Invoice | null>(null);
+  const [mailTo, setMailTo] = useState("");
+  const [mailSubject, setMailSubject] = useState("");
+  const [mailBody, setMailBody] = useState("");
+  const [mailSending, setMailSending] = useState(false);
+
+  const handleOpenMailModal = (inv: Invoice) => {
+    const cust = Array.isArray(inv.customers) ? inv.customers[0] : inv.customers;
+    const custName = cust?.name ?? "";
+    const custEmail = cust?.email ?? "";
+    const ci = companyInfo;
+    const sig = ci
+      ? `\n\n──────────────────\n${ci.name}${ci.postal_code ? `\n〒${ci.postal_code}` : ""}${ci.address ? `\n${ci.address}` : ""}${ci.phone ? `\nTEL: ${ci.phone}` : ""}${ci.email ? `\n${ci.email}` : ""}\n──────────────────`
+      : "";
+
+    setMailTarget(inv);
+    setMailTo(custEmail);
+    setMailSubject(`【お支払いのお願い】請求書 ${inv.invoice_number}`);
+    setMailBody(
+      `${custName} 御中\n\nお世話になっております。\n\n下記請求書のお支払期限が超過しております。\nお忙しいところ恐れ入りますが、ご確認のうえお手続きをお願いいたします。\n\n請求書番号: ${inv.invoice_number}\n請求金額: ${inv.total.toLocaleString()}円\n支払期限: ${inv.due_date}\n\nご不明点がございましたらお気軽にお問い合わせください。${sig}`
+    );
+  };
+
+  const handleSendMail = async () => {
+    if (!mailTarget || !companyId || !mailTo) return;
+    setMailSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/invoices/send-mail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceId: mailTarget.id,
+          companyId,
+          subject: mailSubject,
+          body: mailBody,
+          to: mailTo,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "送信に失敗しました"); setMailSending(false); return; }
+      setInvoices((prev) => prev.map((inv) =>
+        inv.id === mailTarget.id ? { ...inv, status: data.status } : inv
+      ));
+      setMailTarget(null);
+      setToast("リマインドメールを送信しました");
+      setTimeout(() => setToast(""), 3000);
+    } catch {
+      setError("メール送信中にエラーが発生しました");
+    }
+    setMailSending(false);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -49,19 +106,21 @@ export default function PaymentsPage() {
 
       const { data: comp } = await supabase
         .from("companies")
-        .select("id")
+        .select("id, name, postal_code, address, phone, email")
         .eq("user_id", user.id)
         .single();
       if (!comp) { setLoading(false); return; }
+      setCompanyId(comp.id);
+      setCompanyInfo(comp);
 
       const { data } = await supabase
         .from("invoices")
-        .select("id, invoice_number, issue_date, due_date, status, total, customers(name)")
+        .select("id, invoice_number, issue_date, due_date, status, total, customers(name, email)")
         .eq("company_id", comp.id)
         .in("status", ["sent", "delivered", "pending", "overdue", "paid", "partial"])
         .order("due_date", { ascending: true });
 
-      // 期日超過を動的に判定（売掛管理と同じロジック）
+      // 期日超過を動的に判定
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const updated = (data ?? []).map((inv) => {
@@ -100,6 +159,14 @@ export default function PaymentsPage() {
       </div>
 
       <div style={{ padding: "24px" }}>
+        {error && (
+          <div style={{
+            padding: "12px 16px", marginBottom: "16px",
+            background: "#fef2f2", border: "1px solid #fca5a5",
+            borderRadius: "var(--radius-card)", color: "#dc2626", fontSize: "14px",
+          }}>{error}</div>
+        )}
+
         {/* サマリーカード */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
           {[
@@ -196,7 +263,7 @@ export default function PaymentsPage() {
                           </button>
                         )}
                         {inv.status === "overdue" && (
-                          <button onClick={() => { setToast("リマインド機能は準備中です"); setTimeout(() => setToast(""), 3000); }}
+                          <button onClick={() => handleOpenMailModal(inv)}
                             style={{ ...flatBtnStyle, border: "1px solid #d70015", color: "#d70015" }}>
                             リマインドを送る
                           </button>
@@ -228,6 +295,80 @@ export default function PaymentsPage() {
           {toast}
         </div>
       )}
+
+      {/* リマインドメール送信モーダル */}
+      {mailTarget && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={() => { if (!mailSending) setMailTarget(null); }}>
+          <div style={{
+            background: "white", borderRadius: "var(--radius-card)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15)", width: "520px",
+            maxHeight: "90vh", overflowY: "auto", padding: "28px",
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: "var(--color-text)" }}>
+                リマインドメール送信
+              </h3>
+              <button onClick={() => setMailTarget(null)} disabled={mailSending}
+                style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--color-text-secondary)" }}>
+                ×
+              </button>
+            </div>
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={modalLabelStyle}>請求書番号</label>
+              <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text)" }}>{mailTarget.invoice_number}</div>
+            </div>
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={modalLabelStyle}>宛先メールアドレス *</label>
+              <input value={mailTo} onChange={(e) => setMailTo(e.target.value)}
+                placeholder="customer@example.com"
+                style={modalInputStyle} />
+            </div>
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={modalLabelStyle}>件名 *</label>
+              <input value={mailSubject} onChange={(e) => setMailSubject(e.target.value)}
+                style={modalInputStyle} />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={modalLabelStyle}>本文 *</label>
+              <textarea value={mailBody} onChange={(e) => setMailBody(e.target.value)}
+                rows={10}
+                style={{ ...modalInputStyle, resize: "vertical", lineHeight: "1.6" }} />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+              <button onClick={() => setMailTarget(null)} disabled={mailSending}
+                style={{
+                  padding: "8px 20px", borderRadius: "var(--radius-button)",
+                  border: "1px solid var(--color-border)", background: "white",
+                  color: "var(--color-text)", fontSize: "13px", fontWeight: "600",
+                  cursor: "pointer", fontFamily: "var(--font-sans)",
+                }}>
+                キャンセル
+              </button>
+              <button onClick={handleSendMail}
+                disabled={mailSending || !mailTo || !mailSubject || !mailBody}
+                style={{
+                  padding: "8px 20px", borderRadius: "var(--radius-button)",
+                  border: "none", background: "#d70015",
+                  color: "white", fontSize: "13px", fontWeight: "600",
+                  cursor: mailSending ? "not-allowed" : "pointer",
+                  opacity: (mailSending || !mailTo || !mailSubject || !mailBody) ? 0.6 : 1,
+                  fontFamily: "var(--font-sans)",
+                }}>
+                {mailSending ? "送信中..." : "リマインドを送信"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -246,4 +387,16 @@ const flatBtnStyle: React.CSSProperties = {
   padding: "4px 12px", borderRadius: "var(--radius-button)",
   background: "transparent", fontSize: "12px", fontWeight: "600",
   cursor: "pointer", fontFamily: "var(--font-sans)", whiteSpace: "nowrap",
+};
+
+const modalLabelStyle: React.CSSProperties = {
+  display: "block", fontSize: "12px", fontWeight: "600",
+  color: "var(--color-text-secondary)", marginBottom: "6px",
+};
+
+const modalInputStyle: React.CSSProperties = {
+  width: "100%", padding: "8px 12px",
+  border: "1px solid var(--color-border)", borderRadius: "8px",
+  fontSize: "14px", outline: "none", fontFamily: "var(--font-sans)",
+  background: "white", boxSizing: "border-box",
 };

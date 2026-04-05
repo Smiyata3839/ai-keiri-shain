@@ -616,9 +616,9 @@ export default function InvoiceListPage() {
                               </button>
                             )}
                             {inv.status === "overdue" && (
-                              <button onClick={() => handleOpenMailModal(inv)}
+                              <button onClick={() => router.push("/payments")}
                                 style={actionBtnStyle("#d70015")}>
-                                督促メール
+                                決済管理へ
                               </button>
                             )}
                           </div>
