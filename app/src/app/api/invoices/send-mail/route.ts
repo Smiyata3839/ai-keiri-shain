@@ -5,9 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { InvoicePdfDocument } from "@/lib/pdf/invoice-pdf";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const serverSupabase = await createClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
   if (!user) {

@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const TOPICS = [
   "仕訳", "消費税", "経費精算", "売掛金", "買掛金", "給与",
   "決算", "資金繰り", "インボイス", "勘定科目", "減価償却",
@@ -12,6 +10,7 @@ const TOPICS = [
 ];
 
 export async function POST(req: NextRequest) {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   try {
     const serverSupabase = await createServerClient();
     const { data: { user } } = await serverSupabase.auth.getUser();

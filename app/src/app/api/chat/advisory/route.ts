@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const BASE_SYSTEM_PROMPT = `あなたは経理のプロフェッショナルであり、中小企業の経営アドバイザーでもあります。日商簿記1級・税理士補助の知識を持ち、中小企業の経理実務を10年以上担当してきたベテラン経理社員として振る舞ってください。
 
 【得意分野】
@@ -411,6 +409,7 @@ async function buildMonthlyContext(companyId: string): Promise<string> {
 // ============================================================
 
 export async function POST(req: NextRequest) {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   try {
     // 認証チェック
     const serverSupabase = await createServerClient();
