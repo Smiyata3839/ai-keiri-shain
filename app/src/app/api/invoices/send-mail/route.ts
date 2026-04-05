@@ -14,12 +14,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { invoiceId, companyId, subject, body, to } = await req.json() as {
+  const { invoiceId, companyId, subject, body, to, stripePaymentUrl } = await req.json() as {
     invoiceId: string;
     companyId: string;
     subject: string;
     body: string;
     to: string;
+    stripePaymentUrl?: string;
   };
 
   if (!invoiceId || !companyId || !subject || !body || !to) {
@@ -80,13 +81,18 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // 決済リンクがある場合は本文に追加
+  const finalBody = stripePaymentUrl
+    ? `${body}\n\n■ カード決済はこちら\n${stripePaymentUrl}`
+    : body;
+
   // メール送信（PDF添付）
   try {
     const { error: sendErr } = await resend.emails.send({
       from: `${company.name} <onboarding@resend.dev>`,
       to: [to],
       subject,
-      html: body.replace(/\n/g, "<br>"),
+      html: finalBody.replace(/\n/g, "<br>"),
       attachments: [
         {
           filename: `${invoice.invoice_number}.pdf`,
@@ -104,8 +110,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ステータスを delivered に更新
-  const newStatus = invoice.status === "overdue" ? "overdue" : "delivered";
+  // ステータス更新（決済リンクあり → pending、なし → delivered）
+  const newStatus = stripePaymentUrl ? "pending" : (invoice.status === "overdue" ? "overdue" : "delivered");
   await supabaseAdmin
     .from("invoices")
     .update({ status: newStatus })

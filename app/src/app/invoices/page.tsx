@@ -12,6 +12,7 @@ type Invoice = {
   due_date: string;
   status: string;
   total: number;
+  stripe_payment_url: string | null;
   customers: { name: string; email: string | null }[] | { name: string; email: string | null } | null;
 };
 
@@ -35,6 +36,7 @@ export default function InvoiceListPage() {
   const [error, setError] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyInfo, setCompanyInfo] = useState<{ name: string; postal_code: string | null; address: string | null; phone: string | null; email: string | null } | null>(null);
+  const [stripeConnected, setStripeConnected] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +82,19 @@ export default function InvoiceListPage() {
     setMailSending(true);
     setError("");
     try {
+      // Stripe決済リンクを添付する場合は先にCheckout Sessionを作成
+      let stripePaymentUrl: string | undefined;
+      if (stripeCheck && stripeConnected) {
+        const checkoutRes = await fetch("/api/stripe/create-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId: mailTarget.id, companyId }),
+        });
+        const checkoutData = await checkoutRes.json();
+        if (!checkoutRes.ok) { setError(checkoutData.error ?? "決済リンク作成に失敗しました"); setMailSending(false); return; }
+        stripePaymentUrl = checkoutData.paymentUrl;
+      }
+
       const res = await fetch("/api/invoices/send-mail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,12 +104,15 @@ export default function InvoiceListPage() {
           subject: mailSubject,
           body: mailBody,
           to: mailTo,
+          stripePaymentUrl,
         }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "送信に失敗しました"); setMailSending(false); return; }
       setInvoices((prev) => prev.map((inv) =>
-        inv.id === mailTarget.id ? { ...inv, status: data.status } : inv
+        inv.id === mailTarget.id
+          ? { ...inv, status: data.status, stripe_payment_url: stripePaymentUrl ?? inv.stripe_payment_url }
+          : inv
       ));
       setMailTarget(null);
       setToast("メールを送信しました");
@@ -106,8 +124,12 @@ export default function InvoiceListPage() {
   };
 
   const handleStripeToggle = () => {
-    setToast("Stripe未設定のため利用できません");
-    setTimeout(() => setToast(""), 3000);
+    if (!stripeConnected) {
+      setToast("Stripe未設定のため利用できません");
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
+    setStripeCheck((v) => !v);
   };
 
   useEffect(() => {
@@ -118,13 +140,14 @@ export default function InvoiceListPage() {
       // get company
       const { data: comp } = await supabase
         .from("companies")
-        .select("id, name, postal_code, address, phone, email")
+        .select("id, name, postal_code, address, phone, email, stripe_connected")
         .eq("user_id", user.id)
         .single();
 
       if (!comp) { setLoading(false); return; }
       setCompanyId(comp.id);
       setCompanyInfo(comp);
+      setStripeConnected(comp.stripe_connected ?? false);
 
       // 売上仕訳の一括生成（未生成分のみ、重複チェック付き）
       try {
@@ -145,7 +168,7 @@ export default function InvoiceListPage() {
 
       const { data, error: fetchErr } = await supabase
         .from("invoices")
-        .select("id, invoice_number, issue_date, due_date, status, total, customers(name, email)")
+        .select("id, invoice_number, issue_date, due_date, status, total, stripe_payment_url, customers(name, email)")
         .eq("company_id", comp.id)
         .order("created_at", { ascending: false });
 
@@ -247,7 +270,7 @@ export default function InvoiceListPage() {
       if (companyId) {
         const { data: refreshed } = await supabase
           .from("invoices")
-          .select("id, invoice_number, issue_date, due_date, status, total, customers(name, email)")
+          .select("id, invoice_number, issue_date, due_date, status, total, stripe_payment_url, customers(name, email)")
           .eq("company_id", companyId)
           .order("created_at", { ascending: false });
         const todayR = new Date();
@@ -582,6 +605,18 @@ export default function InvoiceListPage() {
                                 メール送信
                               </button>
                             )}
+                            {inv.status === "delivered" && inv.stripe_payment_url && (
+                              <button onClick={() => handleOpenMailModal(inv)}
+                                style={actionBtnStyle("#6e36c8")}>
+                                決済リンク再送
+                              </button>
+                            )}
+                            {inv.status === "overdue" && (
+                              <button onClick={() => handleOpenMailModal(inv)}
+                                style={actionBtnStyle("#d70015")}>
+                                督促メール
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -654,17 +689,18 @@ export default function InvoiceListPage() {
 
               <div style={{
                 marginBottom: "20px", padding: "12px 14px",
-                background: "#f9fafb", borderRadius: "8px",
-                border: "1px solid var(--color-border)",
+                background: stripeConnected ? "#f9fafb" : "#f5f5f7", borderRadius: "8px",
+                border: `1px solid ${stripeConnected ? "var(--color-border)" : "#e0e0e5"}`,
               }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px", color: "var(--color-text)" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: stripeConnected ? "pointer" : "default", fontSize: "13px", color: stripeConnected ? "var(--color-text)" : "var(--color-text-secondary)" }}>
                   <input type="checkbox" checked={stripeCheck}
-                    onChange={() => { if (!stripeCheck) handleStripeToggle(); else setStripeCheck(false); }}
+                    onChange={handleStripeToggle}
+                    disabled={!stripeConnected}
                     style={{ width: "16px", height: "16px" }} />
                   カード決済リンクを添付する
                 </label>
                 <p style={{ margin: "4px 0 0 24px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                  Stripe連携後に利用可能になります
+                  {stripeConnected ? "メール本文に決済URLが追加されます（ステータス: 入金待ち）" : "Stripe連携後に利用可能になります"}
                 </p>
               </div>
 
