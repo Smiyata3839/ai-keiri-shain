@@ -37,6 +37,12 @@ export default function CompanyPage() {
   const [sealUrl, setSealUrl] = useState("");
   const [sealUploading, setSealUploading] = useState(false);
 
+  const [stripeKey, setStripeKey] = useState("");
+  const [stripeConnected, setStripeConnected] = useState(false);
+  const [stripeMode, setStripeMode] = useState("");
+  const [stripeTesting, setStripeTesting] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+
   const [userId, setUserId] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,6 +82,11 @@ export default function CompanyPage() {
         setBankAccountHolder(comp.bank_account_holder ?? "");
         setFormFiscalMonth(comp.fiscal_month ?? 3);
         setSealUrl(comp.seal_image_url ?? "");
+        setStripeConnected(comp.stripe_connected ?? false);
+        if (comp.stripe_secret_key) {
+          setStripeKey(comp.stripe_secret_key);
+          setStripeMode(comp.stripe_secret_key.startsWith("sk_test_") ? "テストモード" : "本番モード");
+        }
         setIsEditing(false);
       } else {
         setIsEditing(true);
@@ -200,6 +211,47 @@ export default function CompanyPage() {
       setError(err instanceof Error ? err.message : "角印の削除に失敗しました");
     }
     setSealUploading(false);
+  };
+
+  const handleStripeTest = async () => {
+    if (!companyId || !stripeKey.trim()) { setError("Stripeシークレットキーを入力してください"); return; }
+    setStripeTesting(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch("/api/stripe/test-connection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, stripeSecretKey: stripeKey.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error); setStripeTesting(false); return; }
+      setStripeConnected(true);
+      setStripeMode(data.mode);
+      setSuccess(`Stripe連携が完了しました（${data.mode}）`);
+    } catch {
+      setError("Stripe接続テストに失敗しました");
+    }
+    setStripeTesting(false);
+  };
+
+  const handleStripeDisconnect = async () => {
+    if (!companyId) return;
+    setStripeTesting(true);
+    try {
+      await fetch("/api/stripe/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId }),
+      });
+      setStripeConnected(false);
+      setStripeKey("");
+      setStripeMode("");
+      setSuccess("Stripe連携を解除しました");
+    } catch {
+      setError("連携解除に失敗しました");
+    }
+    setStripeTesting(false);
   };
 
   const disabled = !isEditing;
@@ -461,6 +513,141 @@ export default function CompanyPage() {
                 </label>
               )}
             </div>
+
+            {/* 決済設定 */}
+            <div style={{
+              background: "var(--color-card)", borderRadius: "var(--radius-card)",
+              padding: "24px", marginBottom: "24px",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--color-text)" }}>決済設定</div>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  padding: "3px 10px", borderRadius: "980px", fontSize: "12px", fontWeight: "600",
+                  background: stripeConnected ? "#e6f4ea" : "#fef3c7",
+                  color: stripeConnected ? "#1a7f37" : "#92400e",
+                }}>
+                  <span style={{
+                    width: "6px", height: "6px", borderRadius: "50%",
+                    background: stripeConnected ? "#1a7f37" : "#92400e",
+                  }} />
+                  {stripeConnected ? `連携済み（${stripeMode}）` : "未連携"}
+                </div>
+              </div>
+              <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", margin: "0 0 16px" }}>
+                Stripeと連携すると、請求書にカード決済リンクを添付できます
+              </p>
+
+              {stripeConnected ? (
+                <div>
+                  <div style={{ marginBottom: "12px" }}>
+                    <label style={labelStyle}>シークレットキー</label>
+                    <div style={{
+                      padding: "8px 12px", borderRadius: "8px", fontSize: "14px",
+                      background: "#f5f5f7", color: "var(--color-text-secondary)",
+                      fontFamily: "monospace",
+                    }}>
+                      {stripeKey.slice(0, 12)}{"•".repeat(20)}
+                    </div>
+                  </div>
+                  <button onClick={handleStripeDisconnect} disabled={stripeTesting}
+                    style={{
+                      padding: "6px 16px", borderRadius: "var(--radius-button)",
+                      border: "1px solid #fca5a5", background: "#fef2f2",
+                      color: "#dc2626", fontSize: "13px", fontWeight: "600",
+                      cursor: stripeTesting ? "not-allowed" : "pointer", fontFamily: "var(--font-sans)",
+                    }}>
+                    {stripeTesting ? "処理中..." : "連携を解除"}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ marginBottom: "12px" }}>
+                    <label style={labelStyle}>Stripeシークレットキー</label>
+                    <input
+                      type="password"
+                      value={stripeKey}
+                      onChange={(e) => setStripeKey(e.target.value)}
+                      placeholder="sk_test_... または sk_live_..."
+                      style={{ ...inputStyle, fontFamily: "monospace" }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <button onClick={handleStripeTest} disabled={stripeTesting || !stripeKey.trim()}
+                      style={{
+                        padding: "8px 20px", borderRadius: "var(--radius-button)",
+                        border: "none", background: "#635bff",
+                        color: "white", fontSize: "13px", fontWeight: "600",
+                        cursor: (stripeTesting || !stripeKey.trim()) ? "not-allowed" : "pointer",
+                        opacity: (stripeTesting || !stripeKey.trim()) ? 0.6 : 1,
+                        fontFamily: "var(--font-sans)",
+                      }}>
+                      {stripeTesting ? "接続テスト中..." : "テスト接続して保存"}
+                    </button>
+                    <button onClick={() => setShowGuide(true)}
+                      style={{
+                        padding: "8px 16px", borderRadius: "var(--radius-button)",
+                        border: "1px solid var(--color-border)", background: "white",
+                        color: "var(--color-text)", fontSize: "13px", fontWeight: "600",
+                        cursor: "pointer", fontFamily: "var(--font-sans)",
+                      }}>
+                      設定手順を見る
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Stripe設定ガイドモーダル */}
+            {showGuide && (
+              <div style={{
+                position: "fixed", inset: 0, zIndex: 99999,
+                background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }} onClick={() => setShowGuide(false)}>
+                <div style={{
+                  background: "white", borderRadius: "var(--radius-card)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.15)", width: "520px",
+                  maxHeight: "80vh", overflowY: "auto", padding: "28px",
+                }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                    <h3 style={{ margin: 0, fontSize: "17px", fontWeight: "700" }}>Stripe APIキーの取得手順</h3>
+                    <button onClick={() => setShowGuide(false)}
+                      style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--color-text-secondary)" }}>×</button>
+                  </div>
+                  <div style={{ fontSize: "14px", lineHeight: "2", color: "var(--color-text)" }}>
+                    <p style={{ fontWeight: "600", marginBottom: "8px" }}>1. Stripeアカウントの作成</p>
+                    <p style={{ marginLeft: "16px", color: "var(--color-text-secondary)", fontSize: "13px" }}>
+                      stripe.com でアカウントを作成してください。
+                    </p>
+                    <p style={{ fontWeight: "600", marginBottom: "8px", marginTop: "16px" }}>2. ダッシュボードにログイン</p>
+                    <p style={{ marginLeft: "16px", color: "var(--color-text-secondary)", fontSize: "13px" }}>
+                      dashboard.stripe.com にログインします。
+                    </p>
+                    <p style={{ fontWeight: "600", marginBottom: "8px", marginTop: "16px" }}>3. APIキーを取得</p>
+                    <p style={{ marginLeft: "16px", color: "var(--color-text-secondary)", fontSize: "13px" }}>
+                      左メニュー「開発者」→「APIキー」を開き、「シークレットキー」をコピーしてください。
+                    </p>
+                    <p style={{ fontWeight: "600", marginBottom: "8px", marginTop: "16px" }}>4. テストモードと本番モード</p>
+                    <p style={{ marginLeft: "16px", color: "var(--color-text-secondary)", fontSize: "13px" }}>
+                      まずはテストモード（sk_test_...）で動作確認し、問題なければ本番モード（sk_live_...）に切り替えてください。
+                    </p>
+                  </div>
+                  <div style={{ marginTop: "20px", textAlign: "right" }}>
+                    <button onClick={() => setShowGuide(false)}
+                      style={{
+                        padding: "8px 20px", borderRadius: "var(--radius-button)",
+                        border: "none", background: "var(--color-primary)",
+                        color: "white", fontSize: "13px", fontWeight: "600",
+                        cursor: "pointer", fontFamily: "var(--font-sans)",
+                      }}>
+                      閉じる
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ボタン */}
             {isEditing && (
