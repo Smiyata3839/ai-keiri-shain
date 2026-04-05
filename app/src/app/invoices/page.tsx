@@ -12,7 +12,7 @@ type Invoice = {
   due_date: string;
   status: string;
   total: number;
-  customers: { name: string }[] | { name: string } | null;
+  customers: { name: string; email: string | null }[] | { name: string; email: string | null } | null;
 };
 
 const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
@@ -34,6 +34,7 @@ export default function InvoiceListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<{ name: string; postal_code: string | null; address: string | null; phone: string | null; email: string | null } | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,73 @@ export default function InvoiceListPage() {
   const [searchCustomer, setSearchCustomer] = useState("");
   const [searchMonth, setSearchMonth] = useState("");
   const [csvPreview, setCsvPreview] = useState<{ file: File; rows: Record<string, string>[]; errors: InvoiceCsvRowError[] } | null>(null);
+  const [mailTarget, setMailTarget] = useState<Invoice | null>(null);
+  const [mailTo, setMailTo] = useState("");
+  const [mailSubject, setMailSubject] = useState("");
+  const [mailBody, setMailBody] = useState("");
+  const [mailSending, setMailSending] = useState(false);
+  const [stripeCheck, setStripeCheck] = useState(false);
+  const [toast, setToast] = useState("");
+
+  const handleOpenMailModal = (inv: Invoice) => {
+    const cust = Array.isArray(inv.customers) ? inv.customers[0] : inv.customers;
+    const custName = cust?.name ?? "";
+    const custEmail = cust?.email ?? "";
+    const isOverdue = inv.status === "overdue";
+    const ci = companyInfo;
+    const sig = ci
+      ? `\n\n──────────────────\n${ci.name}${ci.postal_code ? `\n〒${ci.postal_code}` : ""}${ci.address ? `\n${ci.address}` : ""}${ci.phone ? `\nTEL: ${ci.phone}` : ""}${ci.email ? `\n${ci.email}` : ""}\n──────────────────`
+      : "";
+
+    setMailTarget(inv);
+    setMailTo(custEmail);
+    setStripeCheck(false);
+    setMailSubject(
+      isOverdue
+        ? `【お支払いのお願い】請求書 ${inv.invoice_number}`
+        : `請求書送付のご案内（${inv.invoice_number}）`
+    );
+    setMailBody(
+      isOverdue
+        ? `${custName} 御中\n\nお世話になっております。\n\n下記請求書のお支払期限が超過しております。\nお忙しいところ恐れ入りますが、ご確認のうえお手続きをお願いいたします。\n\n請求書番号: ${inv.invoice_number}\n請求金額: ${inv.total.toLocaleString()}円\n支払期限: ${inv.due_date}\n\nご不明点がございましたらお気軽にお問い合わせください。${sig}`
+        : `${custName} 御中\n\nお世話になっております。\n\n下記の通り請求書を送付いたします。\nご確認のほどよろしくお願いいたします。\n\n請求書番号: ${inv.invoice_number}\n請求金額: ${inv.total.toLocaleString()}円\n支払期限: ${inv.due_date}\n\nご不明点がございましたらお気軽にお問い合わせください。${sig}`
+    );
+  };
+
+  const handleSendMail = async () => {
+    if (!mailTarget || !companyId || !mailTo) return;
+    setMailSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/invoices/send-mail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceId: mailTarget.id,
+          companyId,
+          subject: mailSubject,
+          body: mailBody,
+          to: mailTo,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "送信に失敗しました"); setMailSending(false); return; }
+      setInvoices((prev) => prev.map((inv) =>
+        inv.id === mailTarget.id ? { ...inv, status: data.status } : inv
+      ));
+      setMailTarget(null);
+      setToast("メールを送信しました");
+      setTimeout(() => setToast(""), 3000);
+    } catch {
+      setError("メール送信中にエラーが発生しました");
+    }
+    setMailSending(false);
+  };
+
+  const handleStripeToggle = () => {
+    setToast("Stripe未設定のため利用できません");
+    setTimeout(() => setToast(""), 3000);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -50,12 +118,13 @@ export default function InvoiceListPage() {
       // get company
       const { data: comp } = await supabase
         .from("companies")
-        .select("id")
+        .select("id, name, postal_code, address, phone, email")
         .eq("user_id", user.id)
         .single();
 
       if (!comp) { setLoading(false); return; }
       setCompanyId(comp.id);
+      setCompanyInfo(comp);
 
       // 売上仕訳の一括生成（未生成分のみ、重複チェック付き）
       try {
@@ -76,14 +145,22 @@ export default function InvoiceListPage() {
 
       const { data, error: fetchErr } = await supabase
         .from("invoices")
-        .select("id, invoice_number, issue_date, due_date, status, total, customers(name)")
+        .select("id, invoice_number, issue_date, due_date, status, total, customers(name, email)")
         .eq("company_id", comp.id)
         .order("created_at", { ascending: false });
 
       if (fetchErr) {
         setError(fetchErr.message);
       } else {
-        setInvoices(data ?? []);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const updated = (data ?? []).map((inv) => {
+          if (["sent", "delivered", "partial"].includes(inv.status) && new Date(inv.due_date) < today) {
+            return { ...inv, status: "overdue" };
+          }
+          return inv;
+        });
+        setInvoices(updated);
       }
       setLoading(false);
     };
@@ -170,10 +247,17 @@ export default function InvoiceListPage() {
       if (companyId) {
         const { data: refreshed } = await supabase
           .from("invoices")
-          .select("id, invoice_number, issue_date, due_date, status, total, customers(name)")
+          .select("id, invoice_number, issue_date, due_date, status, total, customers(name, email)")
           .eq("company_id", companyId)
           .order("created_at", { ascending: false });
-        setInvoices(refreshed ?? []);
+        const todayR = new Date();
+        todayR.setHours(0, 0, 0, 0);
+        setInvoices((refreshed ?? []).map((inv) => {
+          if (["sent", "delivered", "partial"].includes(inv.status) && new Date(inv.due_date) < todayR) {
+            return { ...inv, status: "overdue" };
+          }
+          return inv;
+        }));
       }
     } catch {
       setError("インポート中にエラーが発生しました");
@@ -478,29 +562,27 @@ export default function InvoiceListPage() {
                             background: st.bg, color: st.color,
                           }}>{st.label}</span>
                         </td>
-                        <td style={{ ...tdStyle, textAlign: "center" }}>
-                          {inv.status === "draft" && (
-                            <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                              <button onClick={(e) => { e.stopPropagation(); router.push(`/invoices/${inv.id}/edit`); }}
-                                style={{
-                                  padding: "4px 12px", borderRadius: "var(--radius-button)",
-                                  border: "1px solid #6b7280", background: "transparent",
-                                  color: "#6b7280", fontSize: "12px", fontWeight: "600",
-                                  cursor: "pointer", fontFamily: "var(--font-sans)",
-                                }}>
-                                編集
+                        <td style={{ ...tdStyle, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                            {inv.status === "draft" && (
+                              <>
+                                <button onClick={() => router.push(`/invoices/${inv.id}/edit`)}
+                                  style={actionBtnStyle("#6b7280")}>
+                                  編集
+                                </button>
+                                <button onClick={() => handleIssue(inv.id)}
+                                  style={actionBtnStyle("var(--color-primary)")}>
+                                  発行する
+                                </button>
+                              </>
+                            )}
+                            {inv.status === "sent" && (
+                              <button onClick={() => handleOpenMailModal(inv)}
+                                style={actionBtnStyle("#0077b6")}>
+                                メール送信
                               </button>
-                              <button onClick={(e) => { e.stopPropagation(); handleIssue(inv.id); }}
-                                style={{
-                                  padding: "4px 12px", borderRadius: "var(--radius-button)",
-                                  border: "1px solid var(--color-primary)", background: "transparent",
-                                  color: "var(--color-primary)", fontSize: "12px", fontWeight: "600",
-                                  cursor: "pointer", fontFamily: "var(--font-sans)",
-                                }}>
-                                発行する
-                              </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -510,6 +592,108 @@ export default function InvoiceListPage() {
             </div>
           )}
         </div>
+
+        {/* トースト */}
+        {toast && (
+          <div style={{
+            position: "fixed", bottom: "24px", right: "24px", zIndex: 99999,
+            padding: "12px 20px", borderRadius: "var(--radius-card)",
+            background: "#1d1d1f", color: "white", fontSize: "14px", fontWeight: "600",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+          }}>
+            {toast}
+          </div>
+        )}
+
+        {/* メール送付モーダル */}
+        {mailTarget && (
+          <div style={{
+            position: "fixed", inset: 0, zIndex: 99999,
+            background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }} onClick={() => { if (!mailSending) setMailTarget(null); }}>
+            <div style={{
+              background: "white", borderRadius: "var(--radius-card)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15)", width: "520px",
+              maxHeight: "90vh", overflowY: "auto", padding: "28px",
+            }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: "var(--color-text)" }}>
+                  {mailTarget.status === "overdue" ? "リマインドメール送信" : "請求書メール送信"}
+                </h3>
+                <button onClick={() => setMailTarget(null)} disabled={mailSending}
+                  style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--color-text-secondary)" }}>
+                  ×
+                </button>
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label style={modalLabelStyle}>請求書番号</label>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text)" }}>{mailTarget.invoice_number}</div>
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label style={modalLabelStyle}>宛先メールアドレス *</label>
+                <input value={mailTo} onChange={(e) => setMailTo(e.target.value)}
+                  placeholder="customer@example.com"
+                  style={modalInputStyle} />
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label style={modalLabelStyle}>件名 *</label>
+                <input value={mailSubject} onChange={(e) => setMailSubject(e.target.value)}
+                  style={modalInputStyle} />
+              </div>
+
+              <div style={{ marginBottom: "14px" }}>
+                <label style={modalLabelStyle}>本文 *</label>
+                <textarea value={mailBody} onChange={(e) => setMailBody(e.target.value)}
+                  rows={10}
+                  style={{ ...modalInputStyle, resize: "vertical", lineHeight: "1.6" }} />
+              </div>
+
+              <div style={{
+                marginBottom: "20px", padding: "12px 14px",
+                background: "#f9fafb", borderRadius: "8px",
+                border: "1px solid var(--color-border)",
+              }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "13px", color: "var(--color-text)" }}>
+                  <input type="checkbox" checked={stripeCheck}
+                    onChange={() => { if (!stripeCheck) handleStripeToggle(); else setStripeCheck(false); }}
+                    style={{ width: "16px", height: "16px" }} />
+                  カード決済リンクを添付する
+                </label>
+                <p style={{ margin: "4px 0 0 24px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
+                  Stripe連携後に利用可能になります
+                </p>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                <button onClick={() => setMailTarget(null)} disabled={mailSending}
+                  style={{
+                    padding: "8px 20px", borderRadius: "var(--radius-button)",
+                    border: "1px solid var(--color-border)", background: "white",
+                    color: "var(--color-text)", fontSize: "13px", fontWeight: "600",
+                    cursor: "pointer", fontFamily: "var(--font-sans)",
+                  }}>
+                  キャンセル
+                </button>
+                <button onClick={handleSendMail}
+                  disabled={mailSending || !mailTo || !mailSubject || !mailBody}
+                  style={{
+                    padding: "8px 20px", borderRadius: "var(--radius-button)",
+                    border: "none", background: "var(--color-primary)",
+                    color: "white", fontSize: "13px", fontWeight: "600",
+                    cursor: mailSending ? "not-allowed" : "pointer",
+                    opacity: (mailSending || !mailTo || !mailSubject || !mailBody) ? 0.6 : 1,
+                    fontFamily: "var(--font-sans)",
+                  }}>
+                  {mailSending ? "送信中..." : "送信する"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }
@@ -523,3 +707,23 @@ const thStyle: React.CSSProperties = {
 const tdStyle: React.CSSProperties = {
   padding: "12px 16px", color: "var(--color-text)",
 };
+
+const modalLabelStyle: React.CSSProperties = {
+  display: "block", fontSize: "12px", fontWeight: "600",
+  color: "var(--color-text-secondary)", marginBottom: "6px",
+};
+
+const modalInputStyle: React.CSSProperties = {
+  width: "100%", padding: "8px 12px",
+  border: "1px solid var(--color-border)", borderRadius: "8px",
+  fontSize: "14px", outline: "none", fontFamily: "var(--font-sans)",
+  background: "white", boxSizing: "border-box",
+};
+
+const actionBtnStyle = (color: string): React.CSSProperties => ({
+  padding: "4px 12px", borderRadius: "var(--radius-button)",
+  border: `1px solid ${color}`, background: "transparent",
+  color, fontSize: "12px", fontWeight: "600",
+  cursor: "pointer", fontFamily: "var(--font-sans)",
+  whiteSpace: "nowrap",
+});

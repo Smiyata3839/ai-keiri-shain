@@ -34,6 +34,7 @@ import {
   Sparkles,
   ChevronRight,
   ChevronDown,
+  CreditCard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -73,6 +74,7 @@ const menuGroups: MenuGroup[] = [
       { icon: FilePlus, label: "請求書発行", path: "/invoices/new" },
       { icon: FileText, label: "請求書一覧", path: "/invoices" },
       { icon: Wallet, label: "売掛管理", path: "/receivables" },
+      { icon: CreditCard, label: "決済管理", path: "/payments" },
     ],
   },
   {
