@@ -1,4 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+// STRIPE_DISABLED: Stripeを一時無効化中
+// import Stripe from "stripe";
+// import { supabaseAdmin } from "@/lib/supabase/admin";
+// import { createClient } from "@/lib/supabase/server";
+
+export async function POST(_req: NextRequest) {
+  return NextResponse.json({ error: "Stripe決済は現在無効化されています" }, { status: 503 });
+}
+
+/*
+// ---- 以下、Stripe有効時のコード ----
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -68,3 +80,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+*/

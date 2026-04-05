@@ -14,14 +14,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { invoiceId, companyId, subject, body, to, stripePaymentUrl } = await req.json() as {
+  // STRIPE_DISABLED: stripePaymentUrl を一時無効化
+  const { invoiceId, companyId, subject, body, to /*, stripePaymentUrl */ } = await req.json() as {
     invoiceId: string;
     companyId: string;
     subject: string;
     body: string;
     to: string;
-    stripePaymentUrl?: string;
+    // stripePaymentUrl?: string;
   };
+  const stripePaymentUrl: string | undefined = undefined;
 
   if (!invoiceId || !companyId || !subject || !body || !to) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });

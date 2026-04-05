@@ -36,7 +36,8 @@ export default function InvoiceListPage() {
   const [error, setError] = useState("");
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyInfo, setCompanyInfo] = useState<{ name: string; postal_code: string | null; address: string | null; phone: string | null; email: string | null } | null>(null);
-  const [stripeConnected, setStripeConnected] = useState(false);
+  // STRIPE_DISABLED: const [stripeConnected, setStripeConnected] = useState(false);
+  const stripeConnected = false;
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,7 +83,9 @@ export default function InvoiceListPage() {
     setMailSending(true);
     setError("");
     try {
-      // Stripe決済リンクを添付する場合は先にCheckout Sessionを作成
+      // STRIPE_DISABLED: Stripe決済リンク作成を一時無効化
+      const stripePaymentUrl: string | undefined = undefined;
+      /*
       let stripePaymentUrl: string | undefined;
       if (stripeCheck && stripeConnected) {
         const checkoutRes = await fetch("/api/stripe/create-checkout", {
@@ -94,6 +97,7 @@ export default function InvoiceListPage() {
         if (!checkoutRes.ok) { setError(checkoutData.error ?? "決済リンク作成に失敗しました"); setMailSending(false); return; }
         stripePaymentUrl = checkoutData.paymentUrl;
       }
+      */
 
       const res = await fetch("/api/invoices/send-mail", {
         method: "POST",
@@ -147,7 +151,7 @@ export default function InvoiceListPage() {
       if (!comp) { setLoading(false); return; }
       setCompanyId(comp.id);
       setCompanyInfo(comp);
-      setStripeConnected(comp.stripe_connected ?? false);
+      // STRIPE_DISABLED: setStripeConnected(comp.stripe_connected ?? false);
 
       // 売上仕訳の一括生成（未生成分のみ、重複チェック付き）
       try {
