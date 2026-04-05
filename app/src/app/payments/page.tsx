@@ -63,10 +63,17 @@ export default function PaymentsPage() {
 
     setMailTarget(inv);
     setMailTo(custEmail);
-    setMailSubject(`【お支払いのお願い】請求書 ${inv.invoice_number}`);
-    setMailBody(
-      `${custName} 御中\n\nお世話になっております。\n\n下記請求書のお支払期限が超過しております。\nお忙しいところ恐れ入りますが、ご確認のうえお手続きをお願いいたします。\n\n請求書番号: ${inv.invoice_number}\n請求金額: ${inv.total.toLocaleString()}円\n支払期限: ${inv.due_date}\n\nご不明点がございましたらお気軽にお問い合わせください。${sig}`
-    );
+    if (inv.status === "overdue") {
+      setMailSubject(`【お支払いのお願い】請求書 ${inv.invoice_number}`);
+      setMailBody(
+        `${custName} 御中\n\nお世話になっております。\n\n下記請求書のお支払期限が超過しております。\nお忙しいところ恐れ入りますが、ご確認のうえお手続きをお願いいたします。\n\n請求書番号: ${inv.invoice_number}\n請求金額: ${inv.total.toLocaleString()}円\n支払期限: ${inv.due_date}\n\nご不明点がございましたらお気軽にお問い合わせください。${sig}`
+      );
+    } else {
+      setMailSubject(`請求書送付のご案内（${inv.invoice_number}）`);
+      setMailBody(
+        `${custName} 御中\n\nお世話になっております。\n\n下記の通り請求書を送付いたします。\nご確認のほどよろしくお願いいたします。\n\n請求書番号: ${inv.invoice_number}\n請求金額: ${inv.total.toLocaleString()}円\n支払期限: ${inv.due_date}\n\nご不明点がございましたらお気軽にお問い合わせください。${sig}`
+      );
+    }
   };
 
   const handleSendMail = async () => {
@@ -91,7 +98,7 @@ export default function PaymentsPage() {
         inv.id === mailTarget.id ? { ...inv, status: data.status } : inv
       ));
       setMailTarget(null);
-      setToast("リマインドメールを送信しました");
+      setToast(mailTarget.status === "overdue" ? "リマインドメールを送信しました" : "メールを送信しました");
       setTimeout(() => setToast(""), 3000);
     } catch {
       setError("メール送信中にエラーが発生しました");
@@ -251,7 +258,7 @@ export default function PaymentsPage() {
                       </td>
                       <td style={{ ...tdStyle, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
                         {inv.status === "sent" && (
-                          <button onClick={() => router.push("/invoices")}
+                          <button onClick={() => handleOpenMailModal(inv)}
                             style={{ ...flatBtnStyle, border: "1px solid #0077b6", color: "#0077b6" }}>
                             メール送信
                           </button>
@@ -310,7 +317,7 @@ export default function PaymentsPage() {
           }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <h3 style={{ margin: 0, fontSize: "17px", fontWeight: "700", color: "var(--color-text)" }}>
-                リマインドメール送信
+                {mailTarget.status === "overdue" ? "リマインドメール送信" : "請求書メール送信"}
               </h3>
               <button onClick={() => setMailTarget(null)} disabled={mailSending}
                 style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "var(--color-text-secondary)" }}>
@@ -357,13 +364,13 @@ export default function PaymentsPage() {
                 disabled={mailSending || !mailTo || !mailSubject || !mailBody}
                 style={{
                   padding: "8px 20px", borderRadius: "var(--radius-button)",
-                  border: "none", background: "#d70015",
+                  border: "none", background: mailTarget.status === "overdue" ? "#d70015" : "var(--color-primary)",
                   color: "white", fontSize: "13px", fontWeight: "600",
                   cursor: mailSending ? "not-allowed" : "pointer",
                   opacity: (mailSending || !mailTo || !mailSubject || !mailBody) ? 0.6 : 1,
                   fontFamily: "var(--font-sans)",
                 }}>
-                {mailSending ? "送信中..." : "リマインドを送信"}
+                {mailSending ? "送信中..." : mailTarget.status === "overdue" ? "リマインドを送信" : "送信する"}
               </button>
             </div>
           </div>
