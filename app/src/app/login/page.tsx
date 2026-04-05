@@ -47,15 +47,7 @@ export default function LoginPage() {
   };
 
   const handleSignUp = async () => {
-    setLoading(true);
-    setError("");
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setError(error.message);
-    } else {
-      setError("確認メールを送信しました。メールをご確認ください。");
-    }
-    setLoading(false);
+    setError("現在、新規登録は受け付けておりません。");
   };
 
   const inputStyle: React.CSSProperties = {
@@ -176,18 +168,18 @@ export default function LoginPage() {
             width: "100%",
             padding: "14px",
             background: "transparent",
-            color: "#1d1d1f",
-            border: "1px solid #d2d2d7",
+            color: "#86868b",
+            border: "1px solid #e5e5ea",
             borderRadius: "12px",
             fontSize: "16px",
             fontWeight: "600",
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: "not-allowed",
             fontFamily: "var(--font-sans)",
-            transition: "background 0.2s",
+            opacity: 0.5,
             letterSpacing: "0.2px",
           }}
         >
-          新規登録
+          新規登録（現在停止中）
         </button>
 
         <div style={{ marginTop: "28px", textAlign: "center" }}>
