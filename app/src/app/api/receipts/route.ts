@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+// デモユーザーの日別アップロード回数を追跡
+const demoUsage: { date: string; count: number } = { date: "", count: 0 };
 
 export async function POST(req: NextRequest) {
   const anthropic = new Anthropic({
@@ -12,6 +14,19 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await serverSupabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ receipts: [], error: "認証が必要です。" }, { status: 401 });
+    }
+
+    // デモユーザーは1日1件まで
+    if (user.email === "demo@kanbei.jp") {
+      const today = new Date().toISOString().slice(0, 10);
+      if (demoUsage.date !== today) {
+        demoUsage.date = today;
+        demoUsage.count = 0;
+      }
+      if (demoUsage.count >= 1) {
+        return NextResponse.json({ receipts: [], error: "デモアカウントは1日1件までアップロードできます。" }, { status: 429 });
+      }
+      demoUsage.count++;
     }
 
     const formData = await req.formData();
