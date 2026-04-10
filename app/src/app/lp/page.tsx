@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useId } from "react";
 import Image from "next/image";
 
 /* ═══════════════════════════════════════════
@@ -136,16 +136,30 @@ const GLOBAL_CSS = `
 }
 
 @media (max-width: 768px) {
-  .hero-title { font-size: 36px !important; }
-  .section-title { font-size: 28px !important; }
-  .usp-row { flex-direction: column !important; }
-  .usp-row-reverse { flex-direction: column !important; }
-  .grid-2 { grid-template-columns: 1fr !important; }
-  .grid-3 { grid-template-columns: 1fr !important; }
-  .grid-4 { grid-template-columns: 1fr !important; }
+  .lp-root br { display: none; }
+  .hero-title { font-size: 32px !important; }
+  .section-title { font-size: 20px !important; }
+  .section { padding: 60px 16px !important; }
+  .usp-row, .usp-row-reverse { flex-direction: column !important; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
   .hero-buttons { flex-direction: column !important; align-items: center !important; }
   .nav-inner { padding: 0 16px !important; }
   .footer-grid { grid-template-columns: 1fr !important; text-align: center !important; }
+  .card { padding: 24px !important; }
+  .cost-num { font-size: 28px !important; }
+  .usp-num { font-size: 48px !important; }
+  .usp-title { font-size: 20px !important; }
+  .usp-body { font-size: 14px !important; }
+  .cta-title { font-size: 32px !important; }
+  .solution-title { font-size: 32px !important; }
+  .solution-sub { font-size: 16px !important; }
+  .hero-sub { font-size: 15px !important; }
+  .impact-num { font-size: 56px !important; }
+  .impact-label { font-size: 20px !important; }
+  .table-cell { font-size: 14px !important; padding: 12px 8px !important; }
+  .table-header { font-size: 12px !important; padding: 10px 8px !important; }
+  .case-card { padding: 28px 20px !important; }
+  .case-before { font-size: 17px !important; }
 }
 `;
 
@@ -224,10 +238,8 @@ function HeroParticles() {
    Seigaiha (青海波) Pattern + KANBEI Mon Overlay
    Uses unique pattern IDs per instance to avoid SVG conflicts
    ═══════════════════════════════════════════ */
-let seigaihaCounter = 0;
-
 function SeigaihaOverlay() {
-  const id = useRef(`seigaiha-${++seigaihaCounter}`).current;
+  const id = useId();
   const patternId = `${id}-pat`;
   const maskId = `${id}-mask`;
 
@@ -436,7 +448,7 @@ export default function LPPage() {
           <h1 className="fade-in delay-2 hero-title" style={{ fontSize: 64, fontWeight: 800, lineHeight: 1.3, marginTop: 24, marginBottom: 24, color: "var(--text)" }}>
             採用より、<br />賢い選択。
           </h1>
-          <p className="fade-in delay-3" style={{ fontSize: 18, color: "var(--text-sub)", lineHeight: 1.9, marginBottom: 48 }}>
+          <p className="fade-in delay-3 hero-sub" style={{ fontSize: 18, color: "var(--text-sub)", lineHeight: 1.9, marginBottom: 48 }}>
             経理担当者を雇う前に、KANBEIという選択肢がある。<br />
             月末4〜5時間の経理作業が、チャット一つで完結する。
           </p>
@@ -467,7 +479,7 @@ export default function LPPage() {
             ].map((c, i) => (
               <div key={i} className={`card fade-in delay-${i + 1}`} style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", height: "100%" }}>
                 <div style={{ marginBottom: 16 }}>{c.icon}</div>
-                <p style={{ fontSize: 48, fontFamily: "var(--font-serif)", color: "var(--blue)", fontWeight: 700, marginBottom: 8 }}>{c.num}</p>
+                <p className="cost-num" style={{ fontSize: 48, fontFamily: "var(--font-serif)", color: "var(--blue)", fontWeight: 700, marginBottom: 8 }}>{c.num}</p>
                 <p style={{ fontSize: 16, color: "var(--text)", fontWeight: 500, marginBottom: 8 }}>{c.label}</p>
                 <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{c.sub}</p>
               </div>
@@ -492,8 +504,8 @@ export default function LPPage() {
               style={{ filter: "brightness(0) invert(1) drop-shadow(0 0 40px rgba(59,159,232,.4))", margin: "0 auto", objectFit: "contain" }}
             />
           </div>
-          <h2 className="fade-in section-title" style={{ fontSize: 56, fontWeight: 800, color: "white", marginBottom: 8 }}>KANBEI</h2>
-          <p className="fade-in delay-1" style={{ fontSize: 24, color: "var(--blue-light)", marginBottom: 8 }}>あなたの会社の、経理参謀。</p>
+          <h2 className="fade-in solution-title" style={{ fontSize: 56, fontWeight: 800, color: "white", marginBottom: 8 }}>KANBEI</h2>
+          <p className="fade-in delay-1 solution-sub" style={{ fontSize: 24, color: "var(--blue-light)", marginBottom: 8 }}>あなたの会社の、経理参謀。</p>
           <div className="divider-gold fade-in delay-1" />
           <p className="fade-in delay-2" style={{ fontSize: 18, color: "rgba(255,255,255,.75)", lineHeight: 2, maxWidth: 600, margin: "24px auto 56px" }}>
             経営者が直接対話できる、AIによる経理エキスパート。<br />
@@ -547,11 +559,11 @@ export default function LPPage() {
               }}
             >
               <div style={{ flexShrink: 0 }}>
-                <span style={{ fontSize: 80, fontFamily: "var(--font-serif)", fontWeight: 800, color: "var(--blue)", lineHeight: 1 }}>{usp.num}</span>
+                <span className="usp-num" style={{ fontSize: 80, fontFamily: "var(--font-serif)", fontWeight: 800, color: "var(--blue)", lineHeight: 1 }}>{usp.num}</span>
               </div>
               <div>
-                <h3 style={{ fontSize: 26, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>{usp.title}</h3>
-                <p style={{ fontSize: 16, color: "var(--text-sub)", lineHeight: 2, whiteSpace: "pre-line" }}>{usp.body}</p>
+                <h3 className="usp-title" style={{ fontSize: 26, fontWeight: 700, color: "var(--text)", marginBottom: 16 }}>{usp.title}</h3>
+                <p className="usp-body" style={{ fontSize: 16, color: "var(--text-sub)", lineHeight: 2, whiteSpace: "pre-line" }}>{usp.body}</p>
               </div>
             </div>
           ))}
@@ -567,26 +579,26 @@ export default function LPPage() {
 
           <div className="fade-in" style={{ textAlign: "center", marginBottom: 56 }}>
             <p style={{ fontSize: 18, color: "var(--text-sub)", marginBottom: 8 }}>最大</p>
-            <p style={{ fontSize: 96, fontFamily: "var(--font-serif)", fontWeight: 800, lineHeight: 1 }} className="accent-gold">
+            <p style={{ fontSize: 96, fontFamily: "var(--font-serif)", fontWeight: 800, lineHeight: 1 }} className="accent-gold impact-num">
               <Counter target={398} />
             </p>
-            <p style={{ fontSize: 28, color: "var(--text)", fontWeight: 700, marginTop: 8 }}>万円のコスト削減</p>
+            <p className="impact-label" style={{ fontSize: 28, color: "var(--text)", fontWeight: 700, marginTop: 8 }}>万円のコスト削減</p>
           </div>
 
           <div className="fade-in" style={{ maxWidth: 720, margin: "0 auto 24px", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-sans)" }}>
               <thead>
                 <tr style={{ background: "var(--blue)", color: "white" }}>
-                  <th style={{ padding: "14px 20px", fontSize: 14, fontWeight: 600, textAlign: "center" }}>従来の経理体制</th>
-                  <th style={{ padding: "14px 20px", fontSize: 14, fontWeight: 600, textAlign: "center" }}>KANBEI</th>
-                  <th style={{ padding: "14px 20px", fontSize: 14, fontWeight: 600, textAlign: "center" }}>削減額</th>
+                  <th className="table-header" style={{ padding: "14px 20px", fontSize: 14, fontWeight: 600, textAlign: "center" }}>従来の経理体制</th>
+                  <th className="table-header" style={{ padding: "14px 20px", fontSize: 14, fontWeight: 600, textAlign: "center" }}>KANBEI</th>
+                  <th className="table-header" style={{ padding: "14px 20px", fontSize: 14, fontWeight: 600, textAlign: "center" }}>削減額</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style={{ background: "white" }}>
-                  <td style={{ padding: "20px", textAlign: "center", fontSize: 20, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-serif)" }}>507〜638万円/年</td>
-                  <td style={{ padding: "20px", textAlign: "center", fontSize: 20, fontWeight: 700, color: "var(--blue)", fontFamily: "var(--font-serif)" }}>240万円/年</td>
-                  <td style={{ padding: "20px", textAlign: "center", fontSize: 20, fontWeight: 700, color: "var(--blue)", fontFamily: "var(--font-serif)" }}>最大398万円</td>
+                  <td className="table-cell" style={{ padding: "20px", textAlign: "center", fontSize: 20, fontWeight: 700, color: "var(--text)", fontFamily: "var(--font-serif)" }}>507〜638万円/年</td>
+                  <td className="table-cell" style={{ padding: "20px", textAlign: "center", fontSize: 20, fontWeight: 700, color: "var(--blue)", fontFamily: "var(--font-serif)" }}>240万円/年</td>
+                  <td className="table-cell" style={{ padding: "20px", textAlign: "center", fontSize: 20, fontWeight: 700, color: "var(--blue)", fontFamily: "var(--font-serif)" }}>最大398万円</td>
                 </tr>
               </tbody>
             </table>
@@ -661,14 +673,14 @@ export default function LPPage() {
             導入事例
           </h2>
 
-          <div className="card fade-in" style={{ maxWidth: 860, margin: "0 auto", padding: 56 }}>
+          <div className="card fade-in case-card" style={{ maxWidth: 860, margin: "0 auto", padding: 56 }}>
             <p style={{ fontSize: 12, color: "var(--blue)", letterSpacing: "0.3em", fontWeight: 700, marginBottom: 8 }}>CASE STUDY 01</p>
             <p style={{ fontSize: 16, color: "var(--text-sub)" }}>不動産業 ｜ 社員数5名（小規模事業者）</p>
 
             <div style={{ borderTop: "1px solid var(--border)", margin: "24px 0" }} />
 
             <p style={{ fontSize: 12, color: "var(--text-muted)", letterSpacing: "0.2em", marginBottom: 12 }}>BEFORE</p>
-            <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, color: "var(--text)", lineHeight: 1.9, marginBottom: 0 }}>
+            <p className="case-before" style={{ fontFamily: "var(--font-serif)", fontSize: 22, color: "var(--text)", lineHeight: 1.9, marginBottom: 0 }}>
               経理専任者が不在。代表者が請求書発行・売掛管理・<br />
               会計処理をすべて手作業で行っており、<br />
               月次決算に多大な時間を要していた。
@@ -698,7 +710,7 @@ export default function LPPage() {
       <section style={{ background: "var(--bg-dark)", padding: "140px 24px", textAlign: "center", color: "white", position: "relative", overflow: "hidden" }}>
         <SeigaihaOverlay />
         <div style={{ maxWidth: 720, margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <h2 className="fade-in" style={{ fontFamily: "var(--font-serif)", fontSize: 56, fontWeight: 800, color: "white", lineHeight: 1.4, marginBottom: 24 }}>
+          <h2 className="fade-in cta-title" style={{ fontFamily: "var(--font-serif)", fontSize: 56, fontWeight: 800, color: "white", lineHeight: 1.4, marginBottom: 24 }}>
             経営の参謀を、<br />今すぐ手に入れる。
           </h2>
           <p className="fade-in delay-1" style={{ fontSize: 18, color: "rgba(255,255,255,.7)", lineHeight: 2, marginBottom: 48 }}>
