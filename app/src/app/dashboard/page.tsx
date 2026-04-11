@@ -162,7 +162,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div style={{ background: "var(--color-background)", minHeight: "100vh", padding: "32px 40px" }}>
+    <div className="dashboard-root" style={{ background: "var(--color-background)", minHeight: "100vh", padding: "32px 40px" }}>
         <div style={{ marginBottom: "32px" }}>
           <h1 style={{
             fontSize: "22px",

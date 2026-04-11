@@ -102,6 +102,43 @@ body {
   .main-content { margin-left: 0 !important; }
 }
 
+/* ── モバイル対応 ── */
+@media (max-width: 768px) {
+  /* レイアウト */
+  .main-content { margin-left: 0 !important; padding-top: 56px; }
+
+  /* ダッシュボード */
+  .dashboard-root { padding: 16px !important; }
+  .dashboard-revenue-total { font-size: 20px !important; position: static !important; text-align: right; margin-bottom: 8px; }
+  .dashboard-chart-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+
+  /* 領収書 */
+  .receipt-grid { grid-template-columns: 1fr !important; }
+  .receipt-header { padding: 20px 16px !important; }
+  .receipt-drop-zone { padding: 24px 16px !important; }
+
+  /* チャット */
+  .chat-header { padding: 12px 16px !important; }
+  .chat-messages { padding: 12px 16px !important; }
+  .chat-input-area { padding: 12px 16px !important; }
+  .chat-sync-panel { position: fixed !important; left: 0 !important; width: 100vw !important; z-index: 100 !important; }
+  .chat-keywords { flex-wrap: wrap !important; }
+
+  /* 請求書一覧 */
+  .invoice-page { padding: 16px !important; }
+  .invoice-search { flex-direction: column !important; gap: 8px !important; }
+  .invoice-search input, .invoice-search select { width: 100% !important; }
+  .invoice-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .invoice-table-wrap table { min-width: 640px; }
+
+  /* 決済管理 */
+  .payment-page { padding: 16px !important; }
+  .payment-summary-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .payment-filter { flex-wrap: wrap !important; gap: 6px !important; }
+  .payment-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .payment-table-wrap table { min-width: 640px; }
+}
+
 /* フォント強制適用 */
 body, * {
   font-family: var(--font-noto), var(--font-dm),

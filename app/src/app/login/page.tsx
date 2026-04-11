@@ -16,7 +16,9 @@ export default function LoginPage() {
     if (!user) { router.push("/chat"); return; }
     const { data: company } = await supabase
       .from("companies").select("id").eq("user_id", user.id).single();
-    router.push(company ? "/chat" : "/onboarding");
+    if (!company) { router.push("/onboarding"); return; }
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    router.push(isMobile ? "/m/dashboard" : "/chat");
   };
 
   const handleLogin = async () => {

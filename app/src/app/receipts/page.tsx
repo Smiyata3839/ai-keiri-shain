@@ -191,7 +191,7 @@ export default function ReceiptsPage() {
   return (
       <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f7", fontFamily: '"Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif' }}>
         {/* ヘッダー */}
-        <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
+        <div className="receipt-header" style={{ backgroundColor: "#fff", borderBottom: "1px solid #d2d2d7", padding: "24px 32px 20px", position: "sticky", top: 0, zIndex: 10 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, color: "#1d1d1f", margin: 0 }}>領収書アップロード</h1>
           <p style={{ fontSize: 13, color: "#6e6e73", margin: "4px 0 0" }}>領収書を撮影・アップロードしてAIが自動認識・仕訳します</p>
         </div>
@@ -236,6 +236,7 @@ export default function ReceiptsPage() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
+                capture="environment"
                 style={{ display: "none" }}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -306,7 +307,7 @@ export default function ReceiptsPage() {
                     </span>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  <div className="receipt-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
                     <div>
                       <label style={labelStyle}>日付</label>
                       <input type="date" value={item.date} onChange={(e) => updateReceipt(idx, "date", e.target.value)} style={inputStyle} />
@@ -324,7 +325,7 @@ export default function ReceiptsPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  <div className="receipt-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
                     <div>
                       <label style={labelStyle}>税率</label>
                       <select value={item.tax_rate} onChange={(e) => updateReceipt(idx, "tax_rate", Number(e.target.value))} style={selectStyle}>

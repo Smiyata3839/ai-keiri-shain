@@ -165,7 +165,7 @@ export default function PaymentsPage() {
         <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary)" }}>請求書の入金状況を管理します</p>
       </div>
 
-      <div style={{ padding: "24px" }}>
+      <div className="payment-page" style={{ padding: "24px" }}>
         {error && (
           <div style={{
             padding: "12px 16px", marginBottom: "16px",
@@ -175,7 +175,7 @@ export default function PaymentsPage() {
         )}
 
         {/* サマリーカード */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+        <div className="payment-summary-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
           {[
             { label: "未回収合計", value: fmt(summary.total), sub: `${summary.count}件`, color: "#1d1d1f" },
             { label: "期日超過", value: fmt(summary.overdue), sub: `${invoices.filter((i) => i.status === "overdue").length}件`, color: "#d70015" },
@@ -194,7 +194,7 @@ export default function PaymentsPage() {
         </div>
 
         {/* フィルター */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+        <div className="payment-filter" style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
           {filterStatuses.map((s) => (
             <button key={s} onClick={() => setFilter(s)}
               style={{
@@ -218,7 +218,7 @@ export default function PaymentsPage() {
             該当する請求書はありません
           </div>
         ) : (
-          <div style={{
+          <div className="payment-table-wrap" style={{
             background: "var(--color-card)", borderRadius: "var(--radius-card)",
             boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflow: "hidden",
           }}>

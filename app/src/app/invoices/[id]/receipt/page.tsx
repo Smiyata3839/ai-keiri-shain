@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Company = {
@@ -44,6 +44,8 @@ type InvoiceItem = {
 export default function ReceiptPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const isEmbed = searchParams.get("embed") === "1";
   const supabase = createClient();
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
@@ -171,31 +173,33 @@ export default function ReceiptPage() {
       `}</style>
 
       {/* Header */}
-      <div className="no-print" style={{
-        padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
-        background: "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)",
-        position: "sticky", top: 0, zIndex: 10,
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "var(--color-text)" }}>領収書</h2>
-          <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary)" }}>{receiptNumber}</p>
+      {!isEmbed && (
+        <div className="no-print" style={{
+          padding: "16px 24px", borderBottom: "1px solid var(--color-border)",
+          background: "rgba(255,255,255,0.8)", backdropFilter: "blur(20px)",
+          position: "sticky", top: 0, zIndex: 10,
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "700", color: "var(--color-text)" }}>領収書</h2>
+            <p style={{ margin: 0, fontSize: "12px", color: "var(--color-text-secondary)" }}>{receiptNumber}</p>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button onClick={() => router.back()}
+              style={{ ...btnStyle, border: "1px solid var(--color-border)", background: "white", color: "var(--color-text)" }}>
+              戻る
+            </button>
+            <button onClick={handleOpenMail} disabled={!invoice}
+              style={{ ...btnStyle, border: "1px solid #0077b6", background: "white", color: "#0077b6" }}>
+              メールで送信
+            </button>
+            <button onClick={handlePrint} disabled={!invoice}
+              style={{ ...btnStyle, border: "none", background: "var(--color-primary)", color: "white" }}>
+              印刷 / PDF保存
+            </button>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button onClick={() => router.back()}
-            style={{ ...btnStyle, border: "1px solid var(--color-border)", background: "white", color: "var(--color-text)" }}>
-            戻る
-          </button>
-          <button onClick={handleOpenMail} disabled={!invoice}
-            style={{ ...btnStyle, border: "1px solid #0077b6", background: "white", color: "#0077b6" }}>
-            メールで送信
-          </button>
-          <button onClick={handlePrint} disabled={!invoice}
-            style={{ ...btnStyle, border: "none", background: "var(--color-primary)", color: "white" }}>
-            印刷 / PDF保存
-          </button>
-        </div>
-      </div>
+      )}
 
       <div style={{ padding: "24px", display: "flex", justifyContent: "center" }}>
         {error && (

@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { createPortal } from "react-dom";
 import {
   MessageSquare,
@@ -35,6 +36,7 @@ import {
   ChevronRight,
   ChevronDown,
   CreditCard,
+  ScanText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -101,7 +103,7 @@ const menuGroups: MenuGroup[] = [
     icon: Sparkles,
     isSync: true,
     items: [
-      { icon: Building2, label: "会社プロファイル", path: "/company-profile" },
+      { icon: ScanText, label: "会社プロファイル", path: "/company-profile" },
       { icon: Brain, label: "経営者診断", path: "/owner-diagnosis" },
       { icon: CalendarDays, label: "月次要約", path: "/monthly-summary" },
       { icon: CalendarCheck, label: "年次要約", path: "/annual-summary" },
@@ -117,7 +119,7 @@ const menuGroups: MenuGroup[] = [
   },
 ];
 
-export function Sidebar({ className }: { className?: string }) {
+export function Sidebar({ className, onNavigate, hidden }: { className?: string; onNavigate?: () => void; hidden?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -131,6 +133,7 @@ export function Sidebar({ className }: { className?: string }) {
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [openGroups, setOpenGroups] = useState<string[]>(["メイン"]);
   const panelRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const toggleGroup = (label: string) => {
     setOpenGroups(prev =>
@@ -228,7 +231,7 @@ export function Sidebar({ className }: { className?: string }) {
         minWidth: "280px",
         background: "var(--color-sidebar)",
         color: "white",
-        display: "flex",
+        display: hidden ? "none" : "flex",
         flexDirection: "column",
         height: "100vh",
         position: "fixed",
@@ -357,9 +360,9 @@ export function Sidebar({ className }: { className?: string }) {
           ref={panelRef}
           style={{
             position: "fixed",
-            left: "280px",
+            left: isMobile ? 0 : "280px",
             top: 0,
-            width: "320px",
+            width: isMobile ? "100vw" : "320px",
             height: "100vh",
             background: "var(--color-sidebar)",
             borderLeft: "1px solid var(--color-sidebar-border)",
@@ -504,7 +507,7 @@ export function Sidebar({ className }: { className?: string }) {
                   return (
                     <div
                       key={item.path}
-                      onClick={() => router.push(item.path)}
+                      onClick={() => { router.push(item.path); onNavigate?.(); }}
                       style={{
                         display: "flex",
                         alignItems: "center",

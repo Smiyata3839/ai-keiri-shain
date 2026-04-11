@@ -340,7 +340,7 @@ export default function InvoiceListPage() {
           </div>
         </div>
 
-        <div style={{ padding: "24px" }}>
+        <div className="invoice-page" style={{ padding: "24px" }}>
           {error && (
             <div style={{
               padding: "12px 16px", marginBottom: "16px",
@@ -469,7 +469,7 @@ export default function InvoiceListPage() {
 
           {/* 検索フィルター */}
           {!loading && invoices.length > 0 && (
-            <div style={{
+            <div className="invoice-search" style={{
               display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap",
             }}>
               <input
@@ -543,7 +543,7 @@ export default function InvoiceListPage() {
               </button>
             </div>
           ) : (
-            <div style={{
+            <div className="invoice-table-wrap" style={{
               background: "var(--color-card)", borderRadius: "var(--radius-card)",
               boxShadow: "0 1px 4px rgba(0,0,0,0.06)", overflow: "hidden",
             }}>

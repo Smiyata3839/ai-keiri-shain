@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft, Search, X, ShieldCheck, Zap, AlertTriangle, BarChart2, BookOpen, Wallet, ArrowUpRight, ClipboardList } from "lucide-react";
+import { Send, Scissors, TrendingUp, Coins, Target, ThumbsUp, ThumbsDown, Plus, Brain, CalendarCheck, CalendarDays, Building2, ChevronRight, ChevronLeft, Search, X, ShieldCheck, Zap, AlertTriangle, BarChart2, BookOpen, Wallet, ArrowUpRight, ClipboardList, ScanText } from "lucide-react";
 import { OWNER_TYPES, type OwnerType } from "@/lib/owner-types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -83,6 +83,7 @@ type AdvisoryPhase = "idle" | "diagnosis" | "strategy" | "complete";
 type SyncTab = "owner" | "profile" | "monthly" | "annual";
 
 export default function ChatPage() {
+  const [chatReady, setChatReady] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -95,6 +96,8 @@ export default function ChatPage() {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -112,7 +115,7 @@ export default function ChatPage() {
   const [annualSummaries, setAnnualSummaries] = useState<AnnualSummary[]>([]);
   const [syncLoading, setSyncLoading] = useState(true);
 
-  // 初期化: セッション取得 + メッセージ読み込み
+  // 初期化: 全データ揃ってから一気に表示
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -124,7 +127,7 @@ export default function ChatPage() {
         .select("id")
         .eq("user_id", user.id)
         .single();
-      if (!company) return;
+      if (!company) { setChatReady(true); return; }
       setCompanyId(company.id);
 
       // セッション取得 or 作成
@@ -134,34 +137,50 @@ export default function ChatPage() {
         body: JSON.stringify({ companyId: company.id }),
       });
       const sessionData = await sessionRes.json();
-      if (!sessionData.sessionId) return;
+      if (!sessionData.sessionId) { setChatReady(true); return; }
       setSessionId(sessionData.sessionId);
+
+      let finalMessages: Message[] = [INITIAL_MESSAGE];
+      let finalHasMore = false;
 
       // メッセージ読み込み
       if (!sessionData.isNew) {
         const msgRes = await fetch(`/api/chat/messages?sessionId=${sessionData.sessionId}`);
         const msgData = await msgRes.json();
         if (msgData.messages && msgData.messages.length > 0) {
-          setMessages([INITIAL_MESSAGE, ...msgData.messages]);
-          setHasMore(msgData.hasMore);
+          finalMessages = [INITIAL_MESSAGE, ...msgData.messages];
+          finalHasMore = msgData.hasMore;
         }
       }
 
-      // フォローアップ挨拶を取得（新規セッションまたは既存セッションの冒頭）
+      // フォローアップ挨拶を取得
       try {
         const followupRes = await fetch("/api/chat/followup");
         if (followupRes.ok) {
           const followupData = await followupRes.json();
           if (followupData.message) {
-            setMessages((prev) => [
+            finalMessages = [
               { role: "assistant", content: followupData.message },
-              ...prev.slice(1),
-            ]);
+              ...finalMessages.slice(1),
+            ];
           }
         }
-      } catch { /* フォローアップ取得失敗時はデフォルトメッセージのまま */ }
+      } catch {}
 
-      // KANBEI Sync データ取得
+      // 全データセット → 表示
+      setMessages(finalMessages);
+      setHasMore(finalHasMore);
+      setChatReady(true);
+
+      // 次フレームでスクロール（アニメーションなし）
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
+        initializedRef.current = true;
+      });
+
+      // KANBEI Sync データ取得（独立して裏で読み込み）
       loadSyncData();
     };
     init();
@@ -205,9 +224,15 @@ export default function ChatPage() {
     } catch { /* ignore */ }
   }, [feedbackSent]);
 
+  // 送信後の新メッセージのみスムーズスクロール
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (initializedRef.current && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages.length]);
 
   const resetAdvisoryMode = () => {
     setAdvisoryMode(false);
@@ -347,7 +372,7 @@ export default function ChatPage() {
 
   const syncTabs: { key: SyncTab; label: string; icon: typeof Brain }[] = [
     { key: "owner", label: "経営者タイプ", icon: Brain },
-    { key: "profile", label: "会社プロファイル", icon: Building2 },
+    { key: "profile", label: "会社プロファイル", icon: ScanText },
     { key: "monthly", label: "月次要約", icon: CalendarDays },
     { key: "annual", label: "年次要約", icon: CalendarCheck },
   ];
@@ -542,6 +567,17 @@ export default function ChatPage() {
     cursor: "pointer", fontFamily: "var(--font-sans)",
   };
 
+  if (!chatReady) {
+    return (
+      <div style={{ display: "flex", height: "100vh", background: "var(--color-background)", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
+          <p style={{ color: "var(--color-text-muted)", fontSize: 14 }}>チャットを読み込んでいます...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", height: "100vh", background: "var(--color-background)" }}>
       {/* チャットエリア（中央） */}
@@ -550,7 +586,7 @@ export default function ChatPage() {
         minWidth: 0,
       }}>
         {/* ヘッダー */}
-        <div style={{
+        <div className="chat-header" style={{
           padding: "var(--space-4) var(--space-8)",
           borderBottom: "1px solid var(--color-border)",
           background: "var(--color-header-bg)",
@@ -607,7 +643,7 @@ export default function ChatPage() {
         </div>
 
         {/* メッセージ一覧 */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "var(--space-6) var(--space-8)" }}>
+        <div ref={scrollContainerRef} className="chat-messages" style={{ flex: 1, overflowY: "auto", padding: "var(--space-6) var(--space-8)" }}>
           {hasMore && (
             <div style={{ textAlign: "center", marginBottom: "var(--space-4)" }}>
               <button
@@ -935,12 +971,12 @@ export default function ChatPage() {
         )}
 
         {/* 下部エリア */}
-        <div style={{
+        <div className="chat-input-area" style={{
           borderTop: advisoryMode ? "none" : "1px solid var(--color-border)",
           background: "var(--color-card)",
           padding: "var(--space-4) var(--space-8) var(--space-6)",
         }}>
-          <div style={{
+          <div className="chat-keywords" style={{
             display: "flex", gap: "var(--space-2)", flexWrap: "wrap",
             marginBottom: "var(--space-3)",
           }}>
@@ -1030,7 +1066,7 @@ export default function ChatPage() {
 
       {/* KANBEI Sync パネル（右側） */}
       {syncOpen && (
-        <div style={{
+        <div className="chat-sync-panel" style={{
           width: "420px", flexShrink: 0,
           borderLeft: "1px solid var(--color-border)",
           background: "var(--color-card)",
