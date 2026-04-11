@@ -313,7 +313,7 @@ export default function MobileDashboard() {
                         <Pie data={expenseData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={48} outerRadius={65} paddingAngle={2}>
                           {expenseData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                         </Pie>
-                        <Tooltip formatter={(v: number) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                        <Tooltip formatter={(v) => fmt(Number(v ?? 0))} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
