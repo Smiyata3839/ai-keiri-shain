@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { Mail, X, Eye, Send } from "lucide-react";
+import { MobilePreviewModal } from "@/components/mobile/MobilePreviewModal";
 
 type Invoice = {
   id: string; invoice_number: string; issue_date: string;
@@ -51,6 +52,7 @@ export default function MobilePaymentsPage() {
   const [receiptMailSubject, setReceiptMailSubject] = useState("");
   const [receiptMailBody, setReceiptMailBody] = useState("");
   const [receiptMailSending, setReceiptMailSending] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -274,7 +276,7 @@ export default function MobilePaymentsPage() {
                       )}
                       {inv.status === "paid" && (
                         <>
-                          <button onClick={() => window.open(`/invoices/${inv.id}/receipt?embed=1`, "_blank")} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "1px solid var(--color-border)", background: "#fff", color: "var(--color-text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                          <button onClick={() => setPreviewUrl(`/invoices/${inv.id}/receipt?embed=1`)} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "1px solid var(--color-border)", background: "#fff", color: "var(--color-text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                             <Eye size={14} /> プレビュー
                           </button>
                           <button onClick={() => handleOpenReceiptMail(inv)} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", background: "#0077b6", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
@@ -313,6 +315,11 @@ export default function MobilePaymentsPage() {
           </div>
         </div>
       )}
+      {/* プレビューモーダル */}
+      {previewUrl && (
+        <MobilePreviewModal src={previewUrl} title="領収書プレビュー" onClose={() => setPreviewUrl(null)} />
+      )}
+
       {/* 領収書メール送信モーダル */}
       {receiptMailTarget && (
         <div onClick={() => setReceiptMailTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 2000, display: "flex", alignItems: "flex-end" }}>

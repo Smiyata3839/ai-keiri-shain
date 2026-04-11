@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { MobileHeader } from "@/components/mobile/MobileHeader";
 import { Search, ChevronDown, Mail, Eye, X } from "lucide-react";
+import { MobilePreviewModal } from "@/components/mobile/MobilePreviewModal";
 
 type Invoice = {
   id: string; invoice_number: string; issue_date: string;
@@ -54,6 +55,8 @@ export default function MobileInvoicesPage() {
   const startMonthRef = useRef(4);
   const loadIdRef = useRef(0);
   const [companyInfo, setCompanyInfo] = useState<{ name: string; postal_code: string | null; address: string | null; phone: string | null; email: string | null } | null>(null);
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // メール送信
   const [mailTarget, setMailTarget] = useState<Invoice | null>(null);
@@ -279,7 +282,7 @@ export default function MobileInvoicesPage() {
                 {/* アクションボタン */}
                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                   <button
-                    onClick={() => window.open(`/invoices/${inv.id}/receipt?embed=1`, "_blank")}
+                    onClick={() => setPreviewUrl(`/invoices/${inv.id}/receipt?embed=1`)}
                     style={{
                       flex: 1, padding: "8px 0", borderRadius: 8,
                       border: "1px solid var(--color-border)", background: "#fff",
@@ -308,6 +311,11 @@ export default function MobileInvoicesPage() {
           })
         )}
       </div>
+
+      {/* プレビューモーダル */}
+      {previewUrl && (
+        <MobilePreviewModal src={previewUrl} title="請求書プレビュー" onClose={() => setPreviewUrl(null)} />
+      )}
 
       {/* メール送信モーダル */}
       {mailTarget && (
