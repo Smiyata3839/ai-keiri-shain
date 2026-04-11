@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Providers } from "./providers";
 import { ClientLayout } from "@/components/ClientLayout";
 import { Noto_Sans_JP, DM_Sans } from "next/font/google";
@@ -33,7 +34,7 @@ export default function RootLayout({
     <html lang="ja" className={`${notoSansJP.variable} ${dmSans.variable}`}>
       <body className={`${notoSansJP.variable} ${dmSans.variable}`}>
         <Providers>
-          <ClientLayout>{children}</ClientLayout>
+          <Suspense><ClientLayout>{children}</ClientLayout></Suspense>
         </Providers>
       </body>
     </html>
