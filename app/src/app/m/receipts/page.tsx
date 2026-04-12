@@ -35,7 +35,6 @@ function getCreditAccount(pm: string) {
 
 export default function MobileReceiptsPage() {
   const supabase = createClient();
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [receipts, setReceipts] = useState<ReceiptItem[]>([]);
@@ -116,13 +115,7 @@ export default function MobileReceiptsPage() {
           </div>
         )}
 
-        {/* hidden inputs */}
-        <input
-          ref={cameraInputRef} type="file"
-          accept="image/jpeg,image/png,image/webp" capture="environment"
-          style={{ display: "none" }}
-          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
-        />
+        {/* hidden input */}
         <input
           ref={fileInputRef} type="file"
           accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -148,26 +141,15 @@ export default function MobileReceiptsPage() {
             <Camera size={48} color="var(--color-primary)" style={{ marginBottom: 16 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: "#1d1d1f", margin: "0 0 4px" }}>領収書を読み取る</p>
             <p style={{ fontSize: 12, color: "#6e6e73", margin: "0 0 20px" }}>JPG, PNG, WebP, PDF</p>
-            <div style={{ display: "flex", gap: 10, width: "100%" }}>
-              <button onClick={() => cameraInputRef.current?.click()}
-                style={{
-                  flex: 1, padding: "12px 0", borderRadius: 10,
-                  border: "none", background: "var(--color-primary)", color: "#fff",
-                  fontSize: 14, fontWeight: 600, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                }}>
-                <Camera size={16} /> カメラで撮影
-              </button>
-              <button onClick={() => fileInputRef.current?.click()}
-                style={{
-                  flex: 1, padding: "12px 0", borderRadius: 10,
-                  border: "1px solid var(--color-border)", background: "#fff",
-                  color: "var(--color-text)", fontSize: 14, fontWeight: 600, cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                }}>
-                <FolderOpen size={16} /> ファイル選択
-              </button>
-            </div>
+            <button onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: "100%", padding: "14px 0", borderRadius: 10,
+                border: "none", background: "var(--color-primary)", color: "#fff",
+                fontSize: 15, fontWeight: 700, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}>
+              <FolderOpen size={18} /> ファイルを選択
+            </button>
           </div>
         )}
 
