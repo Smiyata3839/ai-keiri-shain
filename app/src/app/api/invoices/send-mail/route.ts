@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { supabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { InvoicePdfDocument } from "@/lib/pdf/invoice-pdf";
 
@@ -29,7 +28,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 会社情報取得
-  const { data: company } = await supabaseAdmin
+  const { data: company } = await serverSupabase
     .from("companies")
     .select("id, name, invoice_registration_number, postal_code, address, phone, email, bank_name, bank_branch, bank_account_type, bank_account_number, bank_account_holder, seal_image_url")
     .eq("id", companyId)
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 請求書取得
-  const { data: invoice } = await supabaseAdmin
+  const { data: invoice } = await serverSupabase
     .from("invoices")
     .select("id, invoice_number, issue_date, due_date, status, subtotal, tax_8, tax_10, total, notes, customer_id")
     .eq("id", invoiceId)
@@ -51,14 +50,14 @@ export async function POST(req: NextRequest) {
   }
 
   // 顧客名取得
-  const { data: customer } = await supabaseAdmin
+  const { data: customer } = await serverSupabase
     .from("customers")
     .select("name")
     .eq("id", invoice.customer_id)
     .single();
 
   // 明細取得
-  const { data: items } = await supabaseAdmin
+  const { data: items } = await serverSupabase
     .from("invoice_items")
     .select("description, quantity, unit_price, tax_rate, amount")
     .eq("invoice_id", invoiceId)
@@ -113,7 +112,7 @@ export async function POST(req: NextRequest) {
 
   // ステータス更新（決済リンクあり → pending、なし → delivered）
   const newStatus = stripePaymentUrl ? "pending" : (invoice.status === "overdue" ? "overdue" : "delivered");
-  await supabaseAdmin
+  await serverSupabase
     .from("invoices")
     .update({ status: newStatus })
     .eq("id", invoiceId);
