@@ -757,7 +757,7 @@ export default function LPPage() {
             </div>
             <div>
               <p style={{ color: "rgba(255,255,255,.4)", fontSize: 11, letterSpacing: "0.15em", marginBottom: 12, fontWeight: 700 }}>COMPANY</p>
-              <p style={{ marginBottom: 8 }}><a href="https://buildforce.studio.site/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>運営会社</a></p>
+              <p style={{ marginBottom: 8 }}><a href="https://tm-first.studio.site/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>運営会社</a></p>
               <p><a href="https://xana.net/" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,.6)", fontSize: 13, textDecoration: "none", cursor: "pointer" }}>開発元</a></p>
             </div>
           </div>
